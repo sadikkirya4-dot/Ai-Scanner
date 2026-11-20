@@ -63,6 +63,21 @@
             <button class="button button-secondary desktop-quick" data-action="quick-add">＋ Quick add</button>
           </div>
           <div class="privacy-banner"><span class="privacy-icon">◈</span><span><strong>Your data never leaves this device.</strong> Everything is saved locally in your browser.</span><button class="text-button" data-view="settings">Learn more <span>→</span></button></div>
+          <div class="panel overview-filter-card">
+            <span class="overview-filter-label">FILTER OVERVIEW</span>
+            <div class="overview-filter-options" role="group" aria-label="Filter dashboard by date">
+              <button class="overview-filter-button active" type="button" data-overview-period="all" aria-pressed="true">All</button>
+              <button class="overview-filter-button" type="button" data-overview-period="today" aria-pressed="false">Today</button>
+              <button class="overview-filter-button" type="button" data-overview-period="last-month" aria-pressed="false">Last Month</button>
+              <button class="overview-filter-button" type="button" data-overview-period="year" aria-pressed="false">Year</button>
+              <button class="overview-filter-button" type="button" data-overview-period="custom" aria-pressed="false">Custom</button>
+            </div>
+            <div class="overview-custom-range" id="overview-custom-range" hidden>
+              <label for="overview-start-date">From<input id="overview-start-date" type="date"></label>
+              <label for="overview-end-date">To<input id="overview-end-date" type="date"></label>
+            </div>
+            <p class="overview-filter-error" id="overview-filter-error" role="alert" hidden></p>
+          </div>
           <div class="section-heading"><div><p class="eyebrow">AT A GLANCE</p><h2>Your overview</h2></div><span class="updated-label"><span class="live-dot"></span> Updated just now</span></div>
           <div class="kpi-grid">
             <article class="kpi-card">
@@ -94,7 +109,7 @@
                   <path d="M11 20.5h12" stroke="#DCEEFF" stroke-opacity=".72" stroke-width="1.7" stroke-linecap="round"/>
                 </svg>
               </span></div>
-              <p class="kpi-label">This month's spend</p><div class="kpi-bottom"><strong id="spend-value">AED 0</strong></div>
+              <p class="kpi-label" id="spend-label">All-time spend</p><div class="kpi-bottom"><strong id="spend-value">AED 0</strong></div>
             </article>
             <article class="kpi-card">
               <div class="kpi-top"><span class="kpi-icon metric-icon icon-purple" aria-hidden="true">
@@ -111,7 +126,7 @@
                   <path d="M14.7 28.5c1.7 1.1 4.1 1.8 6.8 2" stroke="#FFF4C6" stroke-opacity=".8" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
               </span></div>
-              <p class="kpi-label">Est. monthly bulk savings</p><div class="kpi-bottom"><strong id="savings-value">AED 0</strong></div>
+              <p class="kpi-label" id="savings-label">Est. bulk savings</p><div class="kpi-bottom"><strong id="savings-value">AED 0</strong></div>
             </article>
             <article class="kpi-card">
               <div class="kpi-top"><span class="kpi-icon metric-icon icon-gold" aria-hidden="true">
@@ -154,7 +169,7 @@
           </div>
           <div class="dashboard-columns">
             <section class="panel upcoming-panel"><div class="panel-heading"><div><p class="eyebrow">STAY AHEAD</p><h2>Coming up</h2></div><button class="text-button" data-view="vault">View all <span>→</span></button></div><div id="upcoming-list" class="compact-list"></div></section>
-            <section class="panel spend-panel"><div class="panel-heading"><div><p class="eyebrow">MONEY MOMENT</p><h2>Spending this month</h2></div><button class="text-button" data-view="expenses">Details <span>→</span></button></div><div id="dashboard-breakdown" class="category-bars"></div><div class="privacy-footnote"><span>◈</span> Only you can see your spending</div></section>
+            <section class="panel spend-panel"><div class="panel-heading"><div><p class="eyebrow">MONEY MOMENT</p><h2 id="dashboard-spend-title">Spending · all time</h2></div><button class="text-button" data-view="expenses">Details <span>→</span></button></div><div id="dashboard-breakdown" class="category-bars"></div><div class="privacy-footnote"><span>◈</span> Only you can see your spending</div></section>
           </div>
           <section class="panel savings-preview"><div class="panel-heading"><div><p class="eyebrow">BUY SMARTER</p><h2>Small habits, smarter savings</h2></div><button class="text-button" data-view="bulk">See recommendations <span>→</span></button></div><div id="dashboard-savings" class="savings-mini-grid"></div></section>
           <div class="sample-footer" id="sample-footer" hidden><span>Sample data is active</span><button class="text-button" data-action="clear-samples">Clear sample data</button></div>

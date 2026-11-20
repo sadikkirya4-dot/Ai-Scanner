@@ -16,6 +16,7 @@ Open [http://localhost:8000](http://localhost:8000). Install LifeVault from the 
 
 - Vault entries, expenses, shopping-list items, and receipt image blobs are stored in IndexedDB on this device.
 - Wallet top-ups and debts are stored locally too. The available wallet balance is total funds added minus non-sample expenses dated on or after the first top-up; seeded sample expenses remain visible in the dashboard but do not affect the wallet. Borrowed and lent balances remain separate. Debt entries support editing, settlement, and deletion.
+- Dashboard filters cover **All** saved dates, **Today**, **Last Month** (the previous calendar month), **Year** (year-to-date), and **Custom**. They update time-based money totals, points value, debt records, the wallet balance as of the selected period end, and the spending breakdown. Custom ranges default to this month-to-date.
 - Expense pie charts can be filtered by day, month, year, custom date range, and category.
 - Use **Data & settings → Export JSON backup** before clearing browser data or moving to another device. Restore replaces local records.
 - OCR loads Tesseract.js and English language data from jsDelivr only after **Scan with OCR** is selected. Recognition runs in the browser; receipt images are not uploaded.

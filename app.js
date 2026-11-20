@@ -46,6 +46,7 @@
   let isPro = false;
   let currency = readPreference("lifevault-currency", "AED");
   let darkMode = readPreference("lifevault-theme", "light") === "dark";
+  let overviewPeriod = "all";
   let currentView = "dashboard";
   let expenseReceipt = null;
   let receiptObjectUrl = null;
@@ -245,32 +246,73 @@
       .sort((a, b) => b.amount - a.amount);
   }
 
-  function currentMonthExpenses(expenses) {
+  function getOverviewRange() {
     const now = new Date();
-    return expenses.filter((item) => {
-      const date = new Date(`${item.date}T12:00:00`);
-      return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
-    });
+    const today = todayISO();
+    if (overviewPeriod === "all") return null;
+    if (overviewPeriod === "today") return { start: today, end: today };
+    if (overviewPeriod === "last-month") {
+      return {
+        start: dateInputValue(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+        end: dateInputValue(new Date(now.getFullYear(), now.getMonth(), 0))
+      };
+    }
+    if (overviewPeriod === "year") {
+      return { start: dateInputValue(new Date(now.getFullYear(), 0, 1)), end: today };
+    }
+    return {
+      start: $("#overview-start-date").value,
+      end: $("#overview-end-date").value
+    };
   }
 
-  function computeCurrentMonthSavings(expenses) {
-    const thisMonth = currentMonthExpenses(expenses);
-    const groups = getBulkGroups(thisMonth);
-    return groups.reduce((sum, group) => sum + group.amount * 0.18, 0);
+  function isInOverviewRange(date, range) {
+    return !range || ((!range.start || date >= range.start) && (!range.end || date <= range.end));
   }
 
-  function getWalletSummary(wallet, expenses) {
-    const totalAdded = wallet.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  function getOverviewPresentation(range) {
+    const labels = {
+      all: { spend: "All-time spend", savings: "Est. bulk savings", heading: "Spending · all time", caption: "ALL TIME" },
+      today: { spend: "Today's spend", savings: "Est. savings · today", heading: "Spending · today", caption: "TODAY" },
+      "last-month": { spend: "Last month's spend", savings: "Est. savings · last month", heading: "Spending · last month", caption: "LAST MONTH" },
+      year: { spend: "Year-to-date spend", savings: "Est. savings · year", heading: "Spending · year to date", caption: "YEAR TO DATE" },
+      custom: { spend: "Selected-period spend", savings: "Est. savings · custom", heading: "Spending · custom range", caption: "CUSTOM RANGE" }
+    };
+    const presentation = labels[overviewPeriod];
+    if (overviewPeriod === "custom" && range?.start && range?.end) {
+      presentation.caption = `${localDate(range.start, { month: "short", day: "numeric" })}–${localDate(range.end, { month: "short", day: "numeric" })}`.toUpperCase();
+    }
+    return presentation;
+  }
+
+  function computeEstimatedSavings(expenses) {
+    return getBulkGroups(expenses).reduce((sum, group) => sum + group.amount * 0.18, 0);
+  }
+
+  function getWalletSummary(wallet, expenses, range) {
+    const allTimeAdded = wallet.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
     const firstFundingDate = wallet.reduce((first, entry) => !first || entry.date < first ? entry.date : first, "");
-    const spent = firstFundingDate
+    const trackedExpenses = firstFundingDate
       ? expenses.filter((entry) => !entry.sample && entry.date >= firstFundingDate)
-        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
-      : 0;
-    return { totalAdded, spent, available: totalAdded - spent };
+      : [];
+    const rangedWallet = wallet.filter((entry) => isInOverviewRange(entry.date, range));
+    const rangedExpenses = trackedExpenses.filter((entry) => isInOverviewRange(entry.date, range));
+    const totalAdded = range
+      ? rangedWallet.reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
+      : allTimeAdded;
+    const spent = range
+      ? rangedExpenses.reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
+      : trackedExpenses.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+    const asOfDate = range?.end || todayISO();
+    const available = range
+      ? wallet.filter((entry) => entry.date <= asOfDate).reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
+        - trackedExpenses.filter((entry) => entry.date <= asOfDate).reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
+      : allTimeAdded - spent;
+    return { totalAdded, spent, available, asOfDate };
   }
 
-  function getDebtSummary(debts) {
-    return debts.filter((debt) => Number(debt.remaining) > 0).reduce((summary, debt) => {
+  function getDebtSummary(debts, range = null) {
+    return debts.filter((debt) => Number(debt.remaining) > 0 && isInOverviewRange(debt.date, range)).reduce((summary, debt) => {
       if (debt.direction === "i-owe") {
         summary.owe += Number(debt.remaining);
         summary.oweCount += 1;
@@ -288,17 +330,23 @@
 
   function renderDashboard(data) {
     const { vault, expenses } = data;
+    const range = getOverviewRange();
+    const overviewExpenses = expenses.filter((item) => isInOverviewRange(item.date, range));
+    const overviewVault = vault.filter((item) => isInOverviewRange(item.date, range));
+    const presentation = getOverviewPresentation(range);
     const activeAlerts = vault.filter((item) => !item.done && dayDifference(item.date) !== null
       && dayDifference(item.date) <= 30).length;
-    const monthExpenses = currentMonthExpenses(expenses);
-    const monthTotal = monthExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    const pointsValue = vault.reduce((sum, item) => sum + Number(item.value || 0), 0);
-    const savings = computeCurrentMonthSavings(expenses);
+    const spendTotal = overviewExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const pointsValue = overviewVault.reduce((sum, item) => sum + Number(item.value || 0), 0);
+    const savings = computeEstimatedSavings(overviewExpenses);
 
     $("#urgent-value").textContent = String(activeAlerts);
-    $("#spend-value").textContent = money(monthTotal);
+    $("#spend-label").textContent = presentation.spend;
+    $("#spend-value").textContent = money(spendTotal);
+    $("#savings-label").textContent = presentation.savings;
     $("#savings-value").textContent = money(savings);
     $("#value-value").textContent = money(pointsValue);
+    $("#dashboard-spend-title").textContent = presentation.heading;
     $("#sample-footer").hidden = ![...vault, ...expenses].some((item) => item.sample);
     updateHeaderCount(vault.length);
 
@@ -315,12 +363,14 @@
         return `<div class="compact-item"><span class="compact-icon">${icon}</span><span class="compact-copy"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)} · ${localDate(item.date)}</small></span><span class="compact-days${days <= 7 ? " urgent" : ""}">${timing}</span></div>`;
       }).join("");
     }
-    renderCategoryPie($("#dashboard-breakdown"), monthExpenses, Object.keys(CATEGORIES.expense), "THIS MONTH");
+    renderCategoryPie($("#dashboard-breakdown"), overviewExpenses, Object.keys(CATEGORIES.expense), presentation.caption);
 
-    const walletSummary = getWalletSummary(data.wallet, expenses);
-    const debtSummary = getDebtSummary(data.debts);
+    const walletSummary = getWalletSummary(data.wallet, expenses, range);
+    const debtSummary = getDebtSummary(data.debts, range);
     $("#wallet-available").textContent = money(walletSummary.available);
-    $("#wallet-out-of").textContent = `of ${money(walletSummary.totalAdded)} added`;
+    $("#wallet-out-of").textContent = range
+      ? `Balance as of ${localDate(walletSummary.asOfDate)}`
+      : `of ${money(walletSummary.totalAdded)} added`;
     $("#wallet-spent").textContent = money(walletSummary.spent);
     $("#wallet-added").textContent = money(walletSummary.totalAdded);
     $("#wallet-savings").textContent = money(savings);
@@ -340,10 +390,11 @@
     });
     $("#wallet-analytics").setAttribute("aria-label",
       `Relative metric comparison; segment widths represent ${metricParts.map(([label, name, amount]) => `${name.toLowerCase()} ${money(amount)}`).join(", ")}. These values are not a combined wallet balance.`);
-    const openDebtCount = debtSummary.oweCount + debtSummary.owedCount;
+    const allDebtSummary = getDebtSummary(data.debts);
+    const openDebtCount = allDebtSummary.oweCount + allDebtSummary.owedCount;
     $("#debt-count").textContent = String(openDebtCount);
 
-    const groups = getBulkGroups(expenses).slice(0, 2);
+    const groups = getBulkGroups(overviewExpenses).slice(0, 2);
     const preview = $("#dashboard-savings");
     preview.innerHTML = groups.length ? groups.map((group) =>
       `<div class="mini-savings"><span class="mini-savings-icon">✳</span><span><strong>${escapeHtml(group.name)}</strong><small>${group.purchases.length} buys · ${money(group.amount * 0.18)} possible savings</small></span></div>`
@@ -1461,6 +1512,43 @@
     $("#chart-end-date").addEventListener("change", updateExpenseView);
     $("#debt-search").addEventListener("input", () => database.all("debts").then(renderDebts).catch((error) => reportError(error, "Could not search debts")));
     $("#debt-filter").addEventListener("change", () => database.all("debts").then(renderDebts).catch((error) => reportError(error, "Could not filter debts")));
+
+    const refreshOverview = () => {
+      const start = $("#overview-start-date").value;
+      const end = $("#overview-end-date").value;
+      if (overviewPeriod === "custom" && !start && !end) {
+        $("#overview-filter-error").textContent = "Choose a start date or end date for the custom range.";
+        $("#overview-filter-error").hidden = false;
+        return;
+      }
+      if (overviewPeriod === "custom" && start && end && start > end) {
+        $("#overview-filter-error").textContent = "The start date must be on or before the end date.";
+        $("#overview-filter-error").hidden = false;
+        return;
+      }
+      $("#overview-filter-error").hidden = true;
+      refresh().catch((error) => reportError(error, "Could not filter dashboard"));
+    };
+    $$("[data-overview-period]").forEach((button) => {
+      button.addEventListener("click", () => {
+        overviewPeriod = button.dataset.overviewPeriod;
+        $$("[data-overview-period]").forEach((option) => {
+          const selected = option === button;
+          option.classList.toggle("active", selected);
+          option.setAttribute("aria-pressed", String(selected));
+        });
+        $("#overview-custom-range").hidden = overviewPeriod !== "custom";
+        $("#overview-filter-error").hidden = true;
+        if (overviewPeriod === "custom" && !$("#overview-start-date").value && !$("#overview-end-date").value) {
+          const today = new Date();
+          $("#overview-start-date").value = dateInputValue(new Date(today.getFullYear(), today.getMonth(), 1));
+          $("#overview-end-date").value = todayISO();
+        }
+        refreshOverview();
+      });
+    });
+    $("#overview-start-date").addEventListener("change", refreshOverview);
+    $("#overview-end-date").addEventListener("change", refreshOverview);
 
     $("#currency-select").value = CURRENCY_SYMBOLS[currency] ? currency : "AED";
     currency = $("#currency-select").value;
