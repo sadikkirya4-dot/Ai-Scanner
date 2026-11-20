@@ -322,6 +322,7 @@
     $("#wallet-out-of").textContent = `of ${money(walletSummary.totalAdded)} added`;
     $("#wallet-spent").textContent = money(walletSummary.spent);
     $("#wallet-added").textContent = money(walletSummary.totalAdded);
+    $("#wallet-savings").textContent = money(savings);
     const balancePercent = walletSummary.totalAdded > 0
       ? Math.min(100, Math.max(0, walletSummary.available / walletSummary.totalAdded * 100)) : 0;
     $("#wallet-progress-fill").style.width = `${balancePercent}%`;
