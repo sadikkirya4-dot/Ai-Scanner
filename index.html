@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f6fa">
+  <meta name="description" content="Your private, on-device home for life admin, expenses, and smart savings.">
+  <title>LifeVault — Your life, in order</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#" data-view="dashboard" aria-label="LifeVault home">
+        <span class="brand-mark" aria-hidden="true">⌂</span><span>LifeVault</span>
+      </a>
+      <div class="privacy-note"><span class="privacy-dot"></span> Private by design</div>
+      <nav class="side-nav">
+        <p class="nav-label">WORKSPACE</p>
+        <button class="nav-link active" data-view="dashboard"><span>◫</span> Overview</button>
+        <button class="nav-link" data-view="vault"><span>▤</span> Life admin <span class="nav-count" id="vault-count">0</span></button>
+        <button class="nav-link" data-view="expenses"><span>↗</span> Expenses</button>
+        <button class="nav-link" data-view="debts"><span>↔</span> Debts <span class="nav-count" id="debt-count">0</span></button>
+        <button class="nav-link" data-view="bulk"><span>✳</span> Smart savings</button>
+        <p class="nav-label nav-label-spaced">PREFERENCES</p>
+        <button class="nav-link" data-view="settings"><span>⚙</span> Data & settings</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="pro-card">
+          <span class="pro-star">✦</span>
+          <strong>Make more room</strong>
+          <p>Keep everything together with LifeVault Pro.</p>
+          <button class="button button-pro button-small" data-action="upgrade">Explore Pro <span>→</span></button>
+        </div>
+        <div class="profile-row"><span class="avatar">LV</span><span><strong>Your private vault</strong><small>Stored on this device</small></span><span class="local-check">✓</span></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="mobile-brand"><span class="brand-mark">⌂</span> LifeVault</div>
+        <div class="breadcrumbs"><span>Workspace</span><span class="crumb-slash">/</span><strong id="page-title">Overview</strong></div>
+        <div class="top-actions">
+          <label class="sr-only" for="currency-select">Display currency</label>
+          <select id="currency-select" class="currency-select" aria-label="Display currency">
+            <option value="AED">AED د.إ</option><option value="USD">USD $</option><option value="EUR">EUR €</option><option value="GBP">GBP £</option><option value="SAR">SAR ر.س</option>
+          </select>
+          <button class="icon-button theme-toggle" aria-label="Switch to dark mode" aria-pressed="false" title="Toggle light and dark mode">
+            <span class="theme-icon" aria-hidden="true">☾</span>
+            <span class="theme-switch-track" aria-hidden="true"><i></i></span>
+          </button>
+          <button class="button button-primary top-add" data-action="quick-add"><span>＋</span> Add new</button>
+        </div>
+      </header>
+
+      <div class="view-container">
+        <section class="view active" id="view-dashboard" aria-labelledby="welcome-title">
+          <div class="welcome-row">
+            <div><p class="eyebrow" id="today-label">YOUR PERSONAL DASHBOARD</p><h1 id="welcome-title">A little more <span>peace of mind.</span></h1><p class="subtitle">Your essentials, expenses, and reminders—all in one private place.</p></div>
+            <button class="button button-secondary desktop-quick" data-action="quick-add">＋ Quick add</button>
+          </div>
+          <div class="privacy-banner"><span class="privacy-icon">◈</span><span><strong>Your data never leaves this device.</strong> Everything is saved locally in your browser.</span><button class="text-button" data-view="settings">Learn more <span>→</span></button></div>
+          <div class="section-heading"><div><p class="eyebrow">AT A GLANCE</p><h2>Your overview</h2></div><span class="updated-label"><span class="live-dot"></span> Updated just now</span></div>
+          <div class="kpi-grid">
+            <article class="kpi-card">
+              <div class="kpi-top"><span class="kpi-icon metric-icon icon-red" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <defs><linearGradient id="bell-front" x1="13" y1="8" x2="35" y2="39" gradientUnits="userSpaceOnUse"><stop stop-color="#FFB9BD"/><stop offset=".52" stop-color="#F47782"/><stop offset="1" stop-color="#D8495C"/></linearGradient><linearGradient id="bell-side" x1="30" y1="17" x2="40" y2="34" gradientUnits="userSpaceOnUse"><stop stop-color="#EB6874"/><stop offset="1" stop-color="#B9314A"/></linearGradient></defs>
+                  <ellipse cx="24" cy="41" rx="14" ry="3" fill="#D94E63" fill-opacity=".2"/>
+                  <path d="M14 31c2.4-2.7 3.2-5.5 3.2-10.4a6.8 6.8 0 0 1 13.6 0c0 4.9.8 7.7 3.2 10.4 1 1.1.2 3-1.3 3H15.3c-1.5 0-2.3-1.9-1.3-3Z" fill="url(#bell-front)"/>
+                  <path d="M30.8 14.5c2.1 1.2 3.5 3.5 3.5 6.1 0 4.9.8 7.7 3.2 10.4 1 1.1.2 3-1.3 3h-5.4V14.5Z" fill="url(#bell-side)"/>
+                  <path d="M20 14.3a5.9 5.9 0 0 1 8.3 1.4" stroke="#FFF" stroke-opacity=".72" stroke-width="2.2" stroke-linecap="round"/>
+                  <path d="M21 36.2h6a3 3 0 0 1-6 0Z" fill="#C64054"/>
+                  <circle cx="24" cy="7.5" r="2" fill="#EE7580"/>
+                  <path d="M24 9.5v3" stroke="#D64E61" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </span></div>
+              <p class="kpi-label">Urgent alerts</p><div class="kpi-bottom"><strong id="urgent-value">0</strong></div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-top"><span class="kpi-icon metric-icon icon-blue" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <defs><linearGradient id="wallet-body" x1="8" y1="10" x2="39" y2="40" gradientUnits="userSpaceOnUse"><stop stop-color="#9CCBFF"/><stop offset=".48" stop-color="#5597E7"/><stop offset="1" stop-color="#3562BD"/></linearGradient><linearGradient id="wallet-flap" x1="25" y1="19" x2="41" y2="34" gradientUnits="userSpaceOnUse"><stop stop-color="#72AEF1"/><stop offset="1" stop-color="#3C69C1"/></linearGradient></defs>
+                  <ellipse cx="24" cy="40" rx="16" ry="3" fill="#3972C7" fill-opacity=".2"/>
+                  <path d="M10 15.5 31.7 9l5.8 6.1v4H10v-3.6Z" fill="#A9D2FF"/>
+                  <path d="m13.5 17 18-5.4 4.1 4.3v3.2H13.5V17Z" fill="#E9F4FF" fill-opacity=".78"/>
+                  <path d="M9 17.5h27.5A3.5 3.5 0 0 1 40 21v13.5a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4v-14a3 3 0 0 1 1-3Z" fill="url(#wallet-body)"/>
+                  <path d="M27 21.5h13v9H27a4.5 4.5 0 1 1 0-9Z" fill="url(#wallet-flap)"/>
+                  <path d="M27 22.8h11.7v6.5H27a3.3 3.3 0 1 1 0-6.5Z" fill="#8CC1FF" fill-opacity=".7"/>
+                  <circle cx="31" cy="26" r="1.5" fill="#F7FBFF"/>
+                  <path d="M11 20.5h12" stroke="#DCEEFF" stroke-opacity=".72" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+              </span></div>
+              <p class="kpi-label">This month's spend</p><div class="kpi-bottom"><strong id="spend-value">AED 0</strong></div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-top"><span class="kpi-icon metric-icon icon-purple" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <defs><linearGradient id="coin-side" x1="13" y1="23" x2="35" y2="39" gradientUnits="userSpaceOnUse"><stop stop-color="#F5C96F"/><stop offset=".55" stop-color="#E9A83F"/><stop offset="1" stop-color="#BD7425"/></linearGradient><linearGradient id="coin-top" x1="15" y1="9" x2="34" y2="24" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF0A9"/><stop offset=".55" stop-color="#FFD66F"/><stop offset="1" stop-color="#F1AD43"/></linearGradient></defs>
+                  <ellipse cx="24" cy="40" rx="15" ry="3" fill="#C47D2D" fill-opacity=".2"/>
+                  <path d="M11 28v5.5c0 3.2 5.8 5.8 13 5.8s13-2.6 13-5.8V28H11Z" fill="url(#coin-side)"/>
+                  <ellipse cx="24" cy="27.8" rx="13" ry="5.8" fill="#FFE18A"/>
+                  <path d="M14 21v5c0 2.8 4.5 5.1 10 5.1s10-2.3 10-5.1v-5H14Z" fill="#E8A33D"/>
+                  <ellipse cx="24" cy="20.8" rx="10" ry="4.8" fill="#FFD269"/>
+                  <path d="M16 14v4.3c0 2.3 3.6 4.1 8 4.1s8-1.8 8-4.1V14H16Z" fill="url(#coin-side)"/>
+                  <ellipse cx="24" cy="13.8" rx="8" ry="4.2" fill="url(#coin-top)"/>
+                  <path d="M19.5 13.8h9" stroke="#D08A2E" stroke-width="1.6" stroke-linecap="round"/>
+                  <path d="M14.7 28.5c1.7 1.1 4.1 1.8 6.8 2" stroke="#FFF4C6" stroke-opacity=".8" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span></div>
+              <p class="kpi-label">Est. monthly bulk savings</p><div class="kpi-bottom"><strong id="savings-value">AED 0</strong></div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-top"><span class="kpi-icon metric-icon icon-gold" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <defs><linearGradient id="gem-left" x1="9" y1="12" x2="24" y2="38" gradientUnits="userSpaceOnUse"><stop stop-color="#A99BFF"/><stop offset="1" stop-color="#6758D5"/></linearGradient><linearGradient id="gem-right" x1="25" y1="11" x2="40" y2="36" gradientUnits="userSpaceOnUse"><stop stop-color="#E1D9FF"/><stop offset=".52" stop-color="#9C8AEC"/><stop offset="1" stop-color="#5848C3"/></linearGradient></defs>
+                  <ellipse cx="24" cy="40" rx="14" ry="3" fill="#6654CC" fill-opacity=".2"/>
+                  <path d="m13 12 7-4h8l7 4 5 8-16 19L8 20l5-8Z" fill="#B7ABFF"/>
+                  <path d="m13 12 7-4 4 9-9 3-7 0 5-8Z" fill="#E8E3FF"/>
+                  <path d="m20 8 4 9 4-9h-8Z" fill="#CFC6FF"/>
+                  <path d="m24 17 9 3 7 0-16 19V17Z" fill="url(#gem-right)"/>
+                  <path d="m15 20 9-3v22L8 20h7Z" fill="url(#gem-left)"/>
+                  <path d="m13 12 7-4h8l7 4 5 8-16 19L8 20l5-8Z" stroke="#FFF" stroke-opacity=".68" stroke-width="1.3" stroke-linejoin="round"/>
+                  <path d="m15 20 9 19 9-19" stroke="#E8E3FF" stroke-opacity=".65" stroke-width="1.2" stroke-linejoin="round"/>
+                </svg>
+              </span></div>
+              <p class="kpi-label">Saved items / points value</p><div class="kpi-bottom"><strong id="value-value">AED 0</strong></div>
+            </article>
+          </div>
+          <div class="finance-overview-grid">
+            <section class="panel wallet-panel">
+              <div class="wallet-header-row"><p class="eyebrow">YOUR WALLET</p><strong id="wallet-available">AED 0</strong><button class="button button-primary button-small" data-action="add-funds">＋ Add funds</button></div>
+              <p class="wallet-out-of" id="wallet-out-of">of AED 0 added</p>
+              <div class="wallet-progress" role="progressbar" aria-label="Wallet balance remaining" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="wallet-progress-fill"></span></div>
+              <div class="wallet-meta"><span><small>SPENT</small><strong id="wallet-spent">AED 0</strong></span><span><small>FUNDS ADDED</small><strong id="wallet-added">AED 0</strong></span><button class="text-button" data-view="expenses">Activity <span>→</span></button></div>
+              <p class="wallet-note">Expenses since your first top-up are deducted; debts stay separate.</p>
+            </section>
+            <section class="panel debt-summary-panel">
+              <div class="panel-heading debt-panel-heading"><div><p class="eyebrow">DEBT SNAPSHOT</p><h2>Keep balances in view</h2></div><button class="button button-secondary button-small" data-action="add-debt">＋ Add debt</button></div>
+              <div class="debt-summary-grid">
+                <div><small>I OWE</small><strong id="dashboard-owe">AED 0</strong></div>
+                <div><small>OWED TO ME</small><strong id="dashboard-owed">AED 0</strong></div>
+              </div>
+              <div class="debt-summary-footer"><span id="dashboard-debt-count">No open debts</span><button class="text-button" data-view="debts">View debts <span>→</span></button></div>
+            </section>
+          </div>
+          <div class="dashboard-columns">
+            <section class="panel upcoming-panel"><div class="panel-heading"><div><p class="eyebrow">STAY AHEAD</p><h2>Coming up</h2></div><button class="text-button" data-view="vault">View all <span>→</span></button></div><div id="upcoming-list" class="compact-list"></div></section>
+            <section class="panel spend-panel"><div class="panel-heading"><div><p class="eyebrow">MONEY MOMENT</p><h2>Spending this month</h2></div><button class="text-button" data-view="expenses">Details <span>→</span></button></div><div id="dashboard-breakdown" class="category-bars"></div><div class="privacy-footnote"><span>◈</span> Only you can see your spending</div></section>
+          </div>
+          <section class="panel savings-preview"><div class="panel-heading"><div><p class="eyebrow">BUY SMARTER</p><h2>Small habits, smarter savings</h2></div><button class="text-button" data-view="bulk">See recommendations <span>→</span></button></div><div id="dashboard-savings" class="savings-mini-grid"></div></section>
+          <div class="sample-footer" id="sample-footer" hidden><span>Sample data is active</span><button class="text-button" data-action="clear-samples">Clear sample data</button></div>
+        </section>
+
+        <section class="view" id="view-vault" aria-labelledby="vault-title">
+          <div class="view-heading"><div><p class="eyebrow">LIFE ADMIN VAULT</p><h1 id="vault-title">The important stuff,<br class="mobile-break"> <span>right where you need it.</span></h1><p class="subtitle">Keep documents, renewals, rewards, and plans in one calm place.</p></div><button class="button button-primary" data-action="add-vault">＋ Add to vault</button></div>
+          <div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="vault-search" type="search" placeholder="Search your vault…" aria-label="Search life admin items"></div><label class="sr-only" for="vault-filter">Filter vault category</label><select class="filter-select" id="vault-filter"><option value="all">All categories</option><option>IDs & travel</option><option>Insurance</option><option>Home & bills</option><option>Rewards & points</option><option>Events</option><option>Warranties</option></select><span class="result-count" id="vault-results"></span></div>
+          <div class="vault-grid" id="vault-list"></div>
+          <div class="empty-state" id="vault-empty" hidden><span class="empty-icon">▤</span><h3>Your vault is ready</h3><p>Add an ID, policy, renewal, or anything you want to remember.</p><button class="button button-primary" data-action="add-vault">＋ Add your first item</button></div>
+        </section>
+
+        <section class="view" id="view-expenses" aria-labelledby="expenses-title">
+          <div class="view-heading"><div><p class="eyebrow">YOUR MONEY, MADE CLEAR</p><h1 id="expenses-title">Know where it <span>goes.</span></h1><p class="subtitle">Private expense tracking, with receipt scanning that works right here in your browser.</p></div><button class="button button-primary" data-action="add-expense">＋ Add expense</button></div>
+          <div class="expense-summary"><div><span class="kpi-icon icon-blue">↗</span><span><small id="expense-period-caption">THIS MONTH</small><strong id="expense-month-total">AED 0</strong></span></div><span id="expense-entry-count">0 transactions this month</span></div>
+          <div class="panel monthly-panel">
+            <div class="panel-heading"><div><p class="eyebrow">SPENDING MIX</p><h2>Expense breakdown</h2></div></div>
+            <div class="chart-controls">
+              <label>Period<select id="chart-period" class="filter-select"><option value="day">Today</option><option value="month" selected>This month</option><option value="year">This year</option><option value="custom">Custom range</option></select></label>
+              <label>Category<select id="chart-category" class="filter-select"><option value="all">All categories</option><option>Groceries</option><option>Dining & Coffee</option><option>Fuel & Transport</option><option>Utilities</option><option>Shopping</option></select></label>
+              <div class="chart-date-range" id="chart-date-range" hidden>
+                <label>From<input id="chart-start-date" type="date"></label><label>To<input id="chart-end-date" type="date"></label>
+              </div>
+            </div>
+            <div id="expense-breakdown" class="category-bars"></div>
+          </div>
+          <div class="panel wallet-ledger-panel">
+            <div class="panel-heading"><div><p class="eyebrow">WALLET ACTIVITY</p><h2>Funds added</h2></div><button class="button button-secondary button-small" data-action="add-funds">＋ Add funds</button></div>
+            <div class="wallet-ledger" id="wallet-ledger"></div>
+          </div>
+          <div class="section-heading expense-list-heading"><div><p class="eyebrow">TRANSACTION HISTORY</p><h2>Your expenses</h2></div></div>
+          <div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="expense-search" type="search" placeholder="Search expenses…" aria-label="Search expenses"></div><label class="sr-only" for="expense-filter">Filter expense category</label><select class="filter-select" id="expense-filter"><option value="all">All categories</option><option>Groceries</option><option>Dining & Coffee</option><option>Fuel & Transport</option><option>Utilities</option><option>Shopping</option></select><span class="result-count" id="expense-results"></span></div>
+          <div class="panel expense-table-panel"><div class="expense-list" id="expense-list"></div><div class="empty-inline" id="expense-empty" hidden><span>↗</span><h3>No expenses found</h3><p>Add an expense or adjust your search.</p></div></div>
+        </section>
+
+        <section class="view" id="view-debts" aria-labelledby="debts-title">
+          <div class="view-heading"><div><p class="eyebrow">BORROWED, LENT, AND SETTLED</p><h1 id="debts-title">Debt, <span>clearly tracked.</span></h1><p class="subtitle">Keep amounts you owe and money owed to you in a private local ledger.</p></div><button class="button button-primary" data-action="add-debt">＋ Add debt</button></div>
+          <div class="debt-total-cards">
+            <article class="panel debt-total-card"><span class="debt-total-icon owe-icon">↗</span><span><small>I OWE</small><strong id="debts-owe-total">AED 0</strong><em id="debts-owe-count">0 open debts</em></span></article>
+            <article class="panel debt-total-card"><span class="debt-total-icon owed-icon">↙</span><span><small>OWED TO ME</small><strong id="debts-owed-total">AED 0</strong><em id="debts-owed-count">0 open debts</em></span></article>
+          </div>
+          <div class="toolbar">
+            <div class="search-wrap"><span>⌕</span><input id="debt-search" type="search" placeholder="Search people or notes…" aria-label="Search debts"></div>
+            <label class="sr-only" for="debt-filter">Filter debt direction</label>
+            <select id="debt-filter" class="filter-select"><option value="all">All debts</option><option value="i-owe">I owe</option><option value="owed-to-me">Owed to me</option><option value="settled">Settled</option></select>
+            <span class="result-count" id="debt-results"></span>
+          </div>
+          <div class="debt-grid" id="debt-list"></div>
+          <div class="empty-state" id="debt-empty" hidden><span class="empty-icon">↔</span><h3>No matching debts</h3><p>Add an amount you owe or money someone owes you.</p><button class="button button-primary" data-action="add-debt">＋ Add a debt</button></div>
+        </section>
+
+        <section class="view" id="view-bulk" aria-labelledby="bulk-title">
+          <div class="view-heading"><div><p class="eyebrow">A LITTLE PLANNING GOES A LONG WAY</p><h1 id="bulk-title">Your smart <span>stock-up list.</span></h1><p class="subtitle">Spot your repeat buys and see where a monthly bulk pack could save you more.</p></div></div>
+          <div class="savings-callout"><span class="callout-icon">✳</span><div><strong>Good habits deserve a little reward.</strong><p>We group similar purchases on this device. Two or more buys earns a stock-up suggestion; estimated savings use an illustrative 18% bulk discount.</p></div></div>
+          <div class="section-heading"><div><p class="eyebrow">BASED ON YOUR PURCHASES</p><h2>Stock-up suggestions</h2></div><span class="result-count" id="bulk-results"></span></div>
+          <div class="bulk-grid" id="bulk-list"></div>
+          <div class="empty-state" id="bulk-empty" hidden><span class="empty-icon">✳</span><h3>Your next smart buy starts here</h3><p>Log repeat purchases in Expenses and we'll find possible bulk savings for you.</p><button class="button button-secondary" data-view="expenses">Go to expenses <span>→</span></button></div>
+          <div class="section-heading shopping-heading"><div><p class="eyebrow">READY WHEN YOU ARE</p><h2>Bulk shopping list</h2></div><button class="text-button" data-action="clear-shopping">Clear list</button></div>
+          <div class="panel shopping-panel" id="shopping-list"></div>
+        </section>
+
+        <section class="view" id="view-settings" aria-labelledby="settings-title">
+          <div class="view-heading"><div><p class="eyebrow">YOUR DEVICE, YOUR CHOICE</p><h1 id="settings-title">Data & <span>settings.</span></h1><p class="subtitle">Your LifeVault belongs to you. Manage its privacy and data here.</p></div></div>
+          <div class="settings-grid">
+            <section class="panel settings-card"><div class="settings-icon icon-purple">◈</div><div><h2>Private by design</h2><p>Your vault and expense data live in this browser's IndexedDB. Nothing is uploaded or synced to a server. Clearing browser data or switching devices may remove your information, so keep a backup.</p><span class="status-tag"><span class="live-dot"></span> Local storage active</span></div></section>
+            <section class="panel settings-card"><div class="settings-icon icon-blue">⇧</div><div><h2>Backup & restore</h2><p>Export a portable JSON backup of your records and receipt images, or restore a backup on this device.</p><div class="button-row"><button class="button button-secondary" data-action="export">↓ Export JSON backup</button><button class="button button-secondary" data-action="restore">↑ Restore backup</button><input id="restore-file" type="file" accept="application/json,.json" hidden></div></div></section>
+            <section class="panel settings-card"><div class="settings-icon icon-gold">✦</div><div><h2>LifeVault Pro</h2><p id="license-status">Free plan includes 5 records on this device. Upgrade to keep as many as you need.</p><button class="button button-pro" data-action="upgrade">☆ Upgrade to Pro · $3/mo</button><button class="text-button license-link" data-action="license">Have a license key?</button></div></section>
+            <section class="panel settings-card"><div class="settings-icon icon-red">⌫</div><div><h2>Clear sample data</h2><p>Remove only the sample items added when LifeVault was first opened. Your own records stay untouched.</p><button class="button button-secondary" data-action="clear-samples">Clear sample data</button></div></section>
+            <section class="panel settings-card danger-card"><div class="settings-icon icon-red">!</div><div><h2>Clear all data</h2><p>Permanently delete vault, expense, wallet, and debt records plus receipt images from this browser. Export a backup first if you may need it.</p><button class="button button-danger" data-action="clear-all">Delete all local data</button></div></section>
+          </div>
+          <p class="settings-note">OCR is processed in your browser when you choose to scan a receipt. The OCR engine and language data are downloaded from a CDN only when you start a scan; receipt images are not uploaded.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <button class="mobile-nav-link active" data-view="dashboard"><span>◫</span><small>Home</small></button>
+    <button class="mobile-nav-link" data-view="vault"><span>▤</span><small>Vault</small></button>
+    <button class="mobile-add" data-action="quick-add" aria-label="Quick add">＋</button>
+    <button class="mobile-nav-link" data-view="expenses"><span>↗</span><small>Spend</small></button>
+    <button class="mobile-nav-link" data-view="debts"><span>↔</span><small>Debt</small></button>
+    <button class="mobile-nav-link" data-view="bulk"><span>✳</span><small>Save</small></button>
+    <button class="mobile-nav-link" data-view="settings"><span>⚙</span><small>Settings</small></button>
+  </nav>
+
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <dialog class="app-dialog" id="item-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-header"><div><p class="eyebrow" id="dialog-eyebrow">LIFE ADMIN</p><h2 id="dialog-title">Add to your vault</h2></div><button class="icon-button dialog-close" data-action="close-dialog" aria-label="Close dialog">×</button></div>
+    <form id="vault-form" class="dialog-form">
+      <input type="hidden" name="id">
+      <label>Item name<input name="name" required maxlength="100" placeholder="e.g. Passport renewal"></label>
+      <div class="form-row"><label>Category<select name="category" required><option>IDs & travel</option><option>Insurance</option><option>Home & bills</option><option>Rewards & points</option><option>Events</option><option>Warranties</option></select></label><label>Expiry / date<input type="date" name="date" required></label></div>
+      <div class="form-row"><label>Reference (optional)<input name="reference" maxlength="80" placeholder="Policy or reference number"></label><label>Value in selected currency<input name="value" type="number" min="0" step="0.01" placeholder="0.00"></label></div>
+      <label>Notes (optional)<textarea name="notes" rows="3" maxlength="500" placeholder="Anything you want to remember…"></textarea></label>
+      <div class="dialog-actions"><button type="button" class="button button-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="button button-primary">Save to vault</button></div>
+    </form>
+    <form id="expense-form" class="dialog-form" hidden>
+      <input type="hidden" name="id">
+      <label>Item or merchant name<input name="name" required maxlength="100" placeholder="e.g. Weekly groceries"></label>
+      <div class="form-row"><label>Category<select name="category" required><option>Groceries</option><option>Dining & Coffee</option><option>Fuel & Transport</option><option>Utilities</option><option>Shopping</option></select></label><label>Amount (<span class="form-currency">AED</span>)<input name="amount" type="number" required min="0.01" step="0.01" placeholder="0.00"></label></div>
+      <div class="form-row"><label>Quantity<input name="quantity" type="number" min="0.01" step="0.01" value="1" required></label><label>Date<input name="date" type="date" required></label></div>
+      <div class="receipt-upload"><div><strong>Receipt photo <span>(optional)</span></strong><small>Stored only on this device. Image files up to 8 MB.</small></div><label class="button button-secondary upload-button">＋ Choose photo<input name="receipt" type="file" accept="image/*" hidden></label><button type="button" class="button button-secondary scan-button" data-action="scan-receipt">⌕ Scan with OCR</button></div>
+      <div class="receipt-preview" id="receipt-preview" hidden></div><p class="ocr-status" id="ocr-status" aria-live="polite"></p>
+      <div class="dialog-actions"><button type="button" class="button button-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="button button-primary">Save expense</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="app-dialog compact-dialog" id="finance-dialog" aria-labelledby="finance-dialog-title">
+    <div class="dialog-header"><div><p class="eyebrow" id="finance-dialog-eyebrow">WALLET</p><h2 id="finance-dialog-title">Add funds</h2></div><button class="icon-button dialog-close" data-action="close-dialog" aria-label="Close dialog">×</button></div>
+    <form id="wallet-form" class="dialog-form" hidden>
+      <input type="hidden" name="id">
+      <label>Amount added (<span class="form-currency">AED</span>)<input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00"></label>
+      <label>Date added<input name="date" type="date" required></label>
+      <label>Note (optional)<input name="note" maxlength="100" placeholder="e.g. Monthly salary"></label>
+      <div class="dialog-actions"><button type="button" class="button button-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="button button-primary">Save funds</button></div>
+    </form>
+    <form id="debt-form" class="dialog-form" hidden>
+      <input type="hidden" name="id">
+      <label>Direction<select name="direction" required><option value="i-owe">I borrowed / I owe</option><option value="owed-to-me">Someone owes me</option></select></label>
+      <label>Person or organization<input name="person" required maxlength="100" placeholder="e.g. Alex"></label>
+      <div class="form-row"><label>Original amount (<span class="form-currency">AED</span>)<input name="amount" type="number" required min="0.01" step="0.01" placeholder="0.00"></label><label>Still outstanding<input name="remaining" type="number" required min="0" step="0.01" placeholder="0.00"></label></div>
+      <div class="form-row"><label>Date recorded<input name="date" type="date" required></label><label>Due date (optional)<input name="dueDate" type="date"></label></div>
+      <label>Note (optional)<textarea name="note" rows="2" maxlength="300" placeholder="Add a short reminder…"></textarea></label>
+      <div class="dialog-actions"><button type="button" class="button button-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="button button-primary">Save debt</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="app-dialog compact-dialog" id="upgrade-dialog" aria-labelledby="upgrade-title">
+    <button class="icon-button dialog-close modal-x" data-action="close-dialog" aria-label="Close dialog">×</button>
+    <div class="upgrade-mark">✦</div><p class="eyebrow">MORE ROOM FOR LIFE</p><h2 id="upgrade-title">Your life, with no limits.</h2><p class="upgrade-copy">LifeVault Pro removes the 5-record free limit, so all your essentials can stay together.</p>
+    <div class="price-line"><strong>$3</strong><span>/ month<br><small>about $0.10 per day</small></span></div>
+    <p class="demo-note">No payment service is connected in this local demo. Try <strong>LIFE-PRO-2026</strong> to unlock Pro on this device.</p>
+    <label class="license-input-label" for="license-input">License key</label><div class="license-row"><input id="license-input" autocomplete="off" placeholder="Enter your license key"><button class="button button-primary" data-action="activate-license">Activate</button></div>
+    <button class="text-button modal-cancel" data-action="close-dialog">Maybe later</button>
+  </dialog>
+
+  <dialog class="app-dialog compact-dialog" id="receipt-dialog" aria-labelledby="receipt-title">
+    <div class="dialog-header"><div><p class="eyebrow">LOCAL RECEIPT</p><h2 id="receipt-title">Receipt preview</h2></div><button class="icon-button dialog-close" data-action="close-dialog" aria-label="Close dialog">×</button></div>
+    <div class="receipt-viewer" id="receipt-viewer"></div>
+  </dialog>
+
+  <template id="vault-card-template">
+    <article class="vault-card panel">
+      <div class="vault-card-top"><span class="category-icon"></span><span class="urgency-badge"></span></div>
+      <p class="vault-category"></p><h3 class="vault-name"></h3><p class="vault-date"></p><p class="vault-reference"></p>
+      <div class="vault-card-value" hidden></div><p class="vault-notes"></p>
+      <div class="card-actions">
+        <button class="mini-action calendar-action" data-card-action="calendar" title="Add to calendar">▦ <span>Calendar</span></button>
+        <button class="mini-action whatsapp-action" data-card-action="whatsapp" title="WhatsApp reminder">◉ <span>WhatsApp</span></button>
+        <button class="mini-action done-action" data-card-action="done" title="Renew or mark done">✓ <span>Done</span></button>
+        <button class="mini-action" data-card-action="edit" title="Edit item">✎ <span>Edit</span></button>
+        <button class="mini-action delete-action" data-card-action="delete" title="Delete item">⌫ <span>Delete</span></button>
+      </div>
+    </article>
+  </template>
+</body>
+</html>
