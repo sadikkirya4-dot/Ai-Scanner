@@ -263,7 +263,7 @@
     const totalAdded = wallet.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
     const firstFundingDate = wallet.reduce((first, entry) => !first || entry.date < first ? entry.date : first, "");
     const spent = firstFundingDate
-      ? expenses.filter((entry) => entry.date >= firstFundingDate)
+      ? expenses.filter((entry) => !entry.sample && entry.date >= firstFundingDate)
         .reduce((sum, entry) => sum + Number(entry.amount || 0), 0)
       : 0;
     return { totalAdded, spent, available: totalAdded - spent };
@@ -318,22 +318,29 @@
     renderCategoryPie($("#dashboard-breakdown"), monthExpenses, Object.keys(CATEGORIES.expense), "THIS MONTH");
 
     const walletSummary = getWalletSummary(data.wallet, expenses);
+    const debtSummary = getDebtSummary(data.debts);
     $("#wallet-available").textContent = money(walletSummary.available);
     $("#wallet-out-of").textContent = `of ${money(walletSummary.totalAdded)} added`;
     $("#wallet-spent").textContent = money(walletSummary.spent);
     $("#wallet-added").textContent = money(walletSummary.totalAdded);
     $("#wallet-savings").textContent = money(savings);
-    const balancePercent = walletSummary.totalAdded > 0
-      ? Math.min(100, Math.max(0, walletSummary.available / walletSummary.totalAdded * 100)) : 0;
-    $("#wallet-progress-fill").style.width = `${balancePercent}%`;
-    $(".wallet-progress").setAttribute("aria-valuenow", String(Math.round(balancePercent)));
-
-    const debtSummary = getDebtSummary(data.debts);
     $("#dashboard-owe").textContent = money(debtSummary.owe);
     $("#dashboard-owed").textContent = money(debtSummary.owed);
+    const metricParts = [
+      ["spent", "Spent", walletSummary.spent],
+      ["added", "Funds added", walletSummary.totalAdded],
+      ["owe", "I owe", debtSummary.owe],
+      ["owed", "Owed to me", debtSummary.owed],
+      ["savings", "Estimated savings", savings]
+    ];
+    const metricTotal = metricParts.reduce((total, [, , amount]) => total + Math.max(0, Number(amount) || 0), 0);
+    metricParts.forEach(([key, , amount]) => {
+      const value = Math.max(0, Number(amount) || 0);
+      $(`[data-wallet-segment="${key}"]`).style.width = `${metricTotal ? value / metricTotal * 100 : 0}%`;
+    });
+    $("#wallet-analytics").setAttribute("aria-label",
+      `Relative metric comparison; segment widths represent ${metricParts.map(([label, name, amount]) => `${name.toLowerCase()} ${money(amount)}`).join(", ")}. These values are not a combined wallet balance.`);
     const openDebtCount = debtSummary.oweCount + debtSummary.owedCount;
-    $("#dashboard-debt-count").textContent = openDebtCount
-      ? `${openDebtCount} open debt${openDebtCount === 1 ? "" : "s"}` : "No open debts";
     $("#debt-count").textContent = String(openDebtCount);
 
     const groups = getBulkGroups(expenses).slice(0, 2);

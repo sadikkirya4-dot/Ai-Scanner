@@ -134,20 +134,22 @@
             <section class="panel wallet-panel">
               <div class="wallet-header-row"><p class="eyebrow">YOUR WALLET</p><strong id="wallet-available">AED 0</strong><div class="wallet-header-actions"><button class="button button-primary button-small" data-action="add-funds">＋ Add funds</button><button class="button button-secondary button-small" data-action="add-debt">＋ Add debt</button></div></div>
               <p class="wallet-out-of" id="wallet-out-of">of AED 0 added</p>
-              <div class="wallet-progress" role="progressbar" aria-label="Wallet balance remaining" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="wallet-progress-fill"></span></div>
+              <div class="wallet-progress" id="wallet-analytics" role="img" aria-label="Relative distribution of wallet, debt, and estimated savings metrics">
+                <span class="wallet-segment wallet-segment-spent" data-wallet-segment="spent" aria-hidden="true"></span>
+                <span class="wallet-segment wallet-segment-added" data-wallet-segment="added" aria-hidden="true"></span>
+                <span class="wallet-segment wallet-segment-owe" data-wallet-segment="owe" aria-hidden="true"></span>
+                <span class="wallet-segment wallet-segment-owed" data-wallet-segment="owed" aria-hidden="true"></span>
+                <span class="wallet-segment wallet-segment-savings" data-wallet-segment="savings" aria-hidden="true"></span>
+              </div>
               <div class="wallet-meta" aria-label="Wallet and debt summary">
-                <span><small>SPENT</small><strong id="wallet-spent">AED 0</strong></span>
-                <span><small>FUNDS ADDED</small><strong id="wallet-added">AED 0</strong></span>
-                <span><small>I OWE</small><strong id="dashboard-owe">AED 0</strong></span>
-                <span><small>OWED TO ME</small><strong id="dashboard-owed">AED 0</strong></span>
-                <span><small>EST. SAVINGS</small><strong id="wallet-savings">AED 0</strong></span>
-                <button class="text-button" data-view="expenses">Activity <span>→</span></button>
+                <span class="wallet-metric wallet-metric-spent"><small>SPENT</small><strong id="wallet-spent">AED 0</strong></span>
+                <span class="wallet-metric wallet-metric-added"><small>FUNDS ADDED</small><strong id="wallet-added">AED 0</strong></span>
+                <span class="wallet-metric wallet-metric-owe"><small>I OWE</small><strong id="dashboard-owe">AED 0</strong></span>
+                <span class="wallet-metric wallet-metric-owed"><small>OWED TO ME</small><strong id="dashboard-owed">AED 0</strong></span>
+                <span class="wallet-metric wallet-metric-savings"><small>EST. SAVINGS</small><strong id="wallet-savings">AED 0</strong></span>
+                <span class="wallet-quick-links"><button class="text-button" data-view="expenses">Activity <span>→</span></button><button class="text-button" data-view="debts">View debts <span>→</span></button></span>
               </div>
-              <p class="wallet-note">Expenses since your first top-up are deducted; debts stay separate.</p>
-              <div class="wallet-debt-section">
-                <div class="panel-heading debt-panel-heading"><div><p class="eyebrow">DEBT SNAPSHOT</p><h2>Keep balances in view</h2></div></div>
-                <div class="debt-summary-footer"><span id="dashboard-debt-count">No open debts</span><button class="text-button" data-view="debts">View debts <span>→</span></button></div>
-              </div>
+              <p class="wallet-note">Your expenses since the first top-up are deducted; sample entries and debts stay separate.</p>
             </section>
           </div>
           <div class="dashboard-columns">
