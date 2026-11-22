@@ -280,31 +280,133 @@
 
   async function seedSamplesIfEmpty() {
     const initialized = await database.get("meta", "initialized");
-    if (initialized?.value) return;
-    const [vault, expenses] = await Promise.all([database.all("vault"), database.all("expenses")]);
-    if (vault.length + expenses.length !== 0) {
+    if (initialized?.value) {
+      const richWalletSeed = await database.get("meta", "rich-wallet-samples-v1");
+      if (!richWalletSeed?.value) {
+        const wallet = await database.all("wallet");
+        if (!wallet.length) {
+          const walletSamples = [
+            { id: "sample-wallet-1", amount: 8500, date: dateOffset(-90), note: "Monthly salary", sample: true, createdAt: Date.now() - 1500 },
+            { id: "sample-wallet-2", amount: 450, date: dateOffset(-82), note: "Travel reimbursement", sample: true, createdAt: Date.now() - 1490 },
+            { id: "sample-wallet-3", amount: 8500, date: dateOffset(-61), note: "Monthly salary", sample: true, createdAt: Date.now() - 1480 },
+            { id: "sample-wallet-4", amount: 1250, date: dateOffset(-55), note: "Freelance project payment", sample: true, createdAt: Date.now() - 1470 },
+            { id: "sample-wallet-5", amount: 300, date: dateOffset(-48), note: "Cash deposit", sample: true, createdAt: Date.now() - 1460 },
+            { id: "sample-wallet-6", amount: 8500, date: dateOffset(-31), note: "Monthly salary", sample: true, createdAt: Date.now() - 1450 },
+            { id: "sample-wallet-7", amount: 600, date: dateOffset(-27), note: "Friend reimbursement", sample: true, createdAt: Date.now() - 1440 },
+            { id: "sample-wallet-8", amount: 1000, date: dateOffset(-20), note: "Bank transfer", sample: true, createdAt: Date.now() - 1430 },
+            { id: "sample-wallet-9", amount: 8500, date: dateOffset(-1), note: "Monthly salary", sample: true, createdAt: Date.now() - 1420 },
+            { id: "sample-wallet-10", amount: 300, date: dateOffset(-1), note: "Cash reimbursement", sample: true, createdAt: Date.now() - 1410 },
+            { id: "sample-wallet-11", amount: 800, date: todayISO(), note: "Side project payment", sample: true, createdAt: Date.now() - 1400 }
+          ];
+          await Promise.all(walletSamples.map((entry) => database.put("wallet", entry)));
+        }
+        await database.put("meta", { key: "rich-wallet-samples-v1", value: true });
+      }
+      const richDebtSeed = await database.get("meta", "rich-debt-samples-v1");
+      if (!richDebtSeed?.value) {
+        const debts = await database.all("debts");
+        if (!debts.some((debt) => String(debt.id).startsWith("sample-debt-"))) {
+          await Promise.all([
+            database.put("debts", { id: "sample-debt-1", person: "Sarah", direction: "owed-to-me", amount: 600, remaining: 250, date: dateOffset(-20), dueDate: dateOffset(10), note: "Shared dinner and taxi", settledRemaining: 250, sample: true, createdAt: Date.now() - 1200 }),
+            database.put("debts", { id: "sample-debt-2", person: "Omar", direction: "i-owe", amount: 400, remaining: 400, date: dateOffset(-9), dueDate: dateOffset(5), note: "Weekend fuel advance", settledRemaining: 400, sample: true, createdAt: Date.now() - 1100 })
+          ]);
+        }
+        await database.put("meta", { key: "rich-debt-samples-v1", value: true });
+      }
+      return;
+    }
+    const [vault, expenses, wallet, debts, tasks, products] = await Promise.all([
+      database.all("vault"), database.all("expenses"), database.all("wallet"),
+      database.all("debts"), database.all("tasks"), database.all("products")
+    ]);
+    if (vault.length + expenses.length + wallet.length + debts.length + tasks.length + products.length !== 0) {
       await database.put("meta", { key: "initialized", value: true });
       return;
     }
+    const now = Date.now();
     const samples = [
       {
         id: "sample-passport", name: "Passport renewal", category: "IDs & travel",
-        date: dateOffset(14), reference: "UAE passport", value: 0,
-        notes: "Start the renewal process before travel season.", sample: true, done: false, createdAt: Date.now()
+        date: dateOffset(14), time: "09:30", recurrence: "yearly", location: "Blue filing cabinet",
+        reference: "UAE passport", value: 0,
+        notes: "Start the renewal process before travel season.", sample: true, done: false, createdAt: now
       },
       {
-        id: "sample-grocery-1", name: "Pantry groceries", category: "Groceries",
-        amount: 84.5, quantity: 1, date: dateInCurrentMonth(5), sample: true, createdAt: Date.now() - 3000
+        id: "sample-insurance", name: "Car insurance renewal", category: "Insurance",
+        date: dateOffset(42), time: "10:00", recurrence: "yearly", location: "Insurance folder",
+        reference: "POL-CAR-2048", value: 3200,
+        notes: "Compare provider quotes before renewing.", sample: true, done: false, createdAt: now - 100
       },
       {
-        id: "sample-grocery-2", name: "Pantry groceries", category: "Groceries",
-        amount: 78, quantity: 1, date: dateInCurrentMonth(2), sample: true, createdAt: Date.now() - 2000
+        id: "sample-rent", name: "Apartment rent", category: "Home & bills",
+        date: dateOffset(9), time: "18:00", recurrence: "monthly", location: "Payments folder",
+        reference: "UNIT-14A", value: 5500,
+        notes: "Scheduled monthly rent payment.", sample: true, done: false, createdAt: now - 200
+      },
+      {
+        id: "sample-warranty", name: "Laptop warranty check", category: "Warranties",
+        date: dateOffset(75), recurrence: "none", location: "Desk drawer",
+        reference: "SN-LPT-7781", value: 2800,
+        notes: "Confirm warranty coverage and keep purchase receipt.", sample: true, done: false, createdAt: now - 300
       }
     ];
+    const expenseSamples = [
+      { id: "sample-grocery-1", name: "Pantry groceries", productId: "sample-product-milk", category: "Groceries", vendor: "Carrefour", amount: 84.5, quantity: 1, unitPrice: 84.5, vat: 5, date: dateInCurrentMonth(5), sample: true, createdAt: now - 3000 },
+      { id: "sample-grocery-2", name: "Whole milk", productId: "sample-product-milk", category: "Groceries", vendor: "Carrefour", amount: 78, quantity: 6, unitPrice: 12.38, vat: 5, date: dateInCurrentMonth(2), sample: true, createdAt: now - 2000 },
+      { id: "sample-grocery-3", name: "Fresh vegetables", productId: "sample-product-vegetables", category: "Groceries", vendor: "Fresh Market", amount: 46.75, quantity: 1, unitPrice: 46.75, vat: 5, date: dateOffset(-8), sample: true, createdAt: now - 2900 },
+      { id: "sample-grocery-4", name: "Rice and pantry staples", productId: "sample-product-rice", category: "Groceries", vendor: "Lulu Hypermarket", amount: 112.4, quantity: 1, unitPrice: 112.4, vat: 5, date: dateOffset(-21), sample: true, createdAt: now - 2800 },
+      { id: "sample-coffee-1", name: "Iced latte", productId: "sample-product-latte", category: "Dining & Coffee", vendor: "Costa Coffee", amount: 24.5, quantity: 1, unitPrice: 24.5, vat: 5, date: dateOffset(-2), sample: true, createdAt: now - 2700 },
+      { id: "sample-coffee-2", name: "Breakfast and coffee", productId: "", category: "Dining & Coffee", vendor: "Starbucks", amount: 68, quantity: 2, unitPrice: 34, vat: 5, date: dateOffset(-6), sample: true, createdAt: now - 2600 },
+      { id: "sample-coffee-3", name: "Lunch meal", productId: "", category: "Dining & Coffee", vendor: "Kcal", amount: 54, quantity: 1, unitPrice: 54, vat: 5, date: dateOffset(-12), sample: true, createdAt: now - 2500 },
+      { id: "sample-fuel-1", name: "Vehicle fuel", productId: "sample-product-fuel", category: "Fuel & Transport", vendor: "ENOC", amount: 185, quantity: 38, unitPrice: 4.87, vat: 0, date: dateOffset(-4), sample: true, createdAt: now - 2400 },
+      { id: "sample-fuel-2", name: "Metro and taxi", productId: "", category: "Fuel & Transport", vendor: "Careem", amount: 92.25, quantity: 3, unitPrice: 30.75, vat: 5, date: dateOffset(-15), sample: true, createdAt: now - 2300 },
+      { id: "sample-fuel-3", name: "Vehicle fuel", productId: "sample-product-fuel", category: "Fuel & Transport", vendor: "ADNOC", amount: 210, quantity: 43, unitPrice: 4.88, vat: 0, date: dateOffset(-29), sample: true, createdAt: now - 2200 },
+      { id: "sample-utility-1", name: "Electricity and water", productId: "", category: "Utilities", vendor: "DEWA", amount: 420, quantity: 1, unitPrice: 420, vat: 0, date: dateOffset(-10), sample: true, createdAt: now - 2100 },
+      { id: "sample-utility-2", name: "Internet subscription", productId: "sample-product-internet", category: "Utilities", vendor: "Du", amount: 299, quantity: 1, unitPrice: 299, vat: 5, date: dateOffset(-18), sample: true, createdAt: now - 2000 },
+      { id: "sample-shopping-1", name: "Running shoes", productId: "sample-product-shoes", category: "Shopping", vendor: "Nike Store", amount: 480, quantity: 1, unitPrice: 480, vat: 5, date: dateOffset(-7), sample: true, createdAt: now - 1900 },
+      { id: "sample-shopping-2", name: "Office headphones", productId: "", category: "Shopping", vendor: "Amazon.ae", amount: 325, quantity: 1, unitPrice: 325, vat: 5, date: dateOffset(-24), sample: true, createdAt: now - 1800 },
+      { id: "sample-grocery-5", name: "Whole milk", productId: "sample-product-milk", category: "Groceries", vendor: "Carrefour", amount: 74.4, quantity: 6, unitPrice: 12.4, vat: 5, date: dateOffset(-35), sample: true, createdAt: now - 1700 },
+      { id: "sample-grocery-6", name: "Pantry groceries", category: "Groceries", vendor: "Lulu Hypermarket", amount: 96, quantity: 1, unitPrice: 96, vat: 5, date: dateOffset(-48), sample: true, createdAt: now - 1600 }
+    ];
+    const walletSamples = [
+      { id: "sample-wallet-1", amount: 8500, date: dateOffset(-90), note: "Monthly salary", sample: true, createdAt: now - 1500 },
+      { id: "sample-wallet-2", amount: 450, date: dateOffset(-82), note: "Travel reimbursement", sample: true, createdAt: now - 1490 },
+      { id: "sample-wallet-3", amount: 8500, date: dateOffset(-61), note: "Monthly salary", sample: true, createdAt: now - 1480 },
+      { id: "sample-wallet-4", amount: 1250, date: dateOffset(-55), note: "Freelance project payment", sample: true, createdAt: now - 1470 },
+      { id: "sample-wallet-5", amount: 300, date: dateOffset(-48), note: "Cash deposit", sample: true, createdAt: now - 1460 },
+      { id: "sample-wallet-6", amount: 8500, date: dateOffset(-31), note: "Monthly salary", sample: true, createdAt: now - 1450 },
+      { id: "sample-wallet-7", amount: 600, date: dateOffset(-27), note: "Friend reimbursement", sample: true, createdAt: now - 1440 },
+      { id: "sample-wallet-8", amount: 1000, date: dateOffset(-20), note: "Bank transfer", sample: true, createdAt: now - 1430 },
+      { id: "sample-wallet-9", amount: 8500, date: dateOffset(-1), note: "Monthly salary", sample: true, createdAt: now - 1420 },
+      { id: "sample-wallet-10", amount: 300, date: dateOffset(-1), note: "Cash reimbursement", sample: true, createdAt: now - 1410 },
+      { id: "sample-wallet-11", amount: 800, date: todayISO(), note: "Side project payment", sample: true, createdAt: now - 1400 }
+    ];
+    const debtSamples = [
+      { id: "sample-debt-1", person: "Sarah", direction: "owed-to-me", amount: 600, remaining: 250, date: dateOffset(-20), dueDate: dateOffset(10), note: "Shared dinner and taxi", settledRemaining: 250, sample: true, createdAt: now - 1200 },
+      { id: "sample-debt-2", person: "Omar", direction: "i-owe", amount: 400, remaining: 400, date: dateOffset(-9), dueDate: dateOffset(5), note: "Weekend fuel advance", settledRemaining: 400, sample: true, createdAt: now - 1100 }
+    ];
+    const taskSamples = [
+      { id: "sample-task-1", title: "Find car keys", location: "Bottom drawer · bedroom", date: todayISO(), priority: "high", done: false, sample: true, createdAt: now - 1000 },
+      { id: "sample-task-2", title: "Pay apartment rent", location: "Bank app · payments", date: dateOffset(9), priority: "high", done: false, sample: true, createdAt: now - 900 },
+      { id: "sample-task-3", title: "Buy replacement water filters", location: "Kitchen cupboard", date: dateOffset(4), priority: "normal", done: false, sample: true, createdAt: now - 800 },
+      { id: "sample-task-4", title: "Renew internet subscription", location: "Router folder", date: dateOffset(-18), priority: "normal", done: true, sample: true, createdAt: now - 700 }
+    ];
+    const productSamples = [
+      { id: "sample-product-milk", name: "Whole milk", category: "Groceries", unitPrice: 12.4, vat: 5, sample: true, createdAt: now - 600 },
+      { id: "sample-product-vegetables", name: "Fresh vegetables", category: "Groceries", unitPrice: 46.75, vat: 5, sample: true, createdAt: now - 500 },
+      { id: "sample-product-rice", name: "Rice and pantry staples", category: "Groceries", unitPrice: 112.4, vat: 5, sample: true, createdAt: now - 400 },
+      { id: "sample-product-latte", name: "Iced latte", category: "Dining & Coffee", unitPrice: 24.5, vat: 5, sample: true, createdAt: now - 300 },
+      { id: "sample-product-fuel", name: "Vehicle fuel", category: "Fuel & Transport", unitPrice: 4.88, vat: 0, sample: true, createdAt: now - 200 },
+      { id: "sample-product-internet", name: "Internet subscription", category: "Utilities", unitPrice: 299, vat: 5, sample: true, createdAt: now - 100 },
+      { id: "sample-product-shoes", name: "Running shoes", category: "Shopping", unitPrice: 480, vat: 5, sample: true, createdAt: now }
+    ];
     await Promise.all([
-      database.put("vault", samples[0]),
-      database.put("expenses", samples[1]),
-      database.put("expenses", samples[2]),
+      ...samples.map((item) => database.put("vault", item)),
+      ...expenseSamples.map((item) => database.put("expenses", item)),
+      ...walletSamples.map((item) => database.put("wallet", item)),
+      ...debtSamples.map((item) => database.put("debts", item)),
+      ...taskSamples.map((item) => database.put("tasks", item)),
+      ...productSamples.map((item) => database.put("products", item)),
       database.put("meta", { key: "initialized", value: true })
     ]);
   }
@@ -389,7 +491,7 @@
     const allTimeAdded = wallet.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
     const firstFundingDate = wallet.reduce((first, entry) => !first || entry.date < first ? entry.date : first, "");
     const trackedExpenses = firstFundingDate
-      ? expenses.filter((entry) => !entry.sample && entry.date >= firstFundingDate)
+      ? expenses.filter((entry) => entry.date >= firstFundingDate)
       : [];
     const rangedWallet = wallet.filter((entry) => isInOverviewRange(entry.date, range));
     const rangedExpenses = trackedExpenses.filter((entry) => isInOverviewRange(entry.date, range));
@@ -425,36 +527,47 @@
   }
 
   function renderDashboard(data) {
-    const { vault, expenses } = data;
+    const { vault, expenses, tasks = [] } = data;
     const range = getOverviewRange();
     const overviewExpenses = expenses.filter((item) => isInOverviewRange(item.date, range));
     const overviewVault = vault.filter((item) => isInOverviewRange(item.date, range));
     const presentation = getOverviewPresentation(range);
-    const activeAlerts = vault.filter((item) => !item.done && dayDifference(item.date) !== null
+    const activeAlerts = overviewVault.filter((item) => !item.done && dayDifference(item.date) !== null
       && dayDifference(item.date) <= 30).length;
     const spendTotal = overviewExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const pointsValue = overviewVault.reduce((sum, item) => sum + Number(item.value || 0), 0);
     const savings = computeEstimatedSavings(overviewExpenses);
 
-    $("#urgent-value").textContent = String(activeAlerts);
-    $("#spend-label").textContent = presentation.spend;
-    $("#spend-value").textContent = money(spendTotal);
-    $("#savings-label").textContent = presentation.savings;
-    $("#savings-value").textContent = money(savings);
-    $("#value-value").textContent = money(pointsValue);
+    if ($("#urgent-value")) $("#urgent-value").textContent = String(activeAlerts);
+    if ($("#spend-label")) $("#spend-label").textContent = presentation.spend;
+    if ($("#spend-value")) $("#spend-value").textContent = money(spendTotal);
+    if ($("#savings-label")) $("#savings-label").textContent = presentation.savings;
+    if ($("#savings-value")) $("#savings-value").textContent = money(savings);
+    if ($("#value-value")) $("#value-value").textContent = money(pointsValue);
     $("#dashboard-spend-title").textContent = presentation.heading;
     $("#sample-footer").hidden = ![...vault, ...expenses].some((item) => item.sample);
     updateHeaderCount(vault.length);
 
-    const upcoming = vault.filter((item) => !item.done && dayDifference(item.date) !== null)
-      .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+    const upcomingItems = [
+      ...overviewVault.filter((item) => !item.done).map((item) => ({
+        name: item.name,
+        detail: `${item.category} · ${vaultDateLine(item)}`,
+        date: item.date,
+        icon: CATEGORIES.vault[item.category] || "◷"
+      })),
+      ...tasks.filter((task) => !task.done && task.date && isInOverviewRange(task.date, range)).map((task) => ({
+        name: task.title,
+        detail: `${task.location || "To-do"} · ${localDate(task.date)}`,
+        date: task.date,
+        icon: "✓"
+      }))
+    ].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
     const upcomingList = $("#upcoming-list");
-    if (!upcoming.length) {
-      upcomingList.innerHTML = '<div class="empty-inline"><p>No upcoming reminders. Add an item to keep an eye on it.</p></div>';
+    if (!upcomingItems.length) {
+      upcomingList.innerHTML = '<div class="empty-inline"><p>No reminders in this overview period.</p></div>';
     } else {
-      upcomingList.innerHTML = upcoming.map((item) => {
-        const icon = CATEGORIES.vault[item.category] || "◷";
-        return `<div class="compact-item"><span class="compact-icon">${icon}</span><span class="compact-copy"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)} · ${escapeHtml(vaultDateLine(item))}</small></span></div>`;
+      upcomingList.innerHTML = upcomingItems.map((item) => {
+        return `<div class="compact-item"><span class="compact-icon">${item.icon}</span><span class="compact-copy"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.detail)}</small></span></div>`;
       }).join("");
     }
     renderCategoryPie($("#dashboard-breakdown"), overviewExpenses, Object.keys(CATEGORIES.expense), presentation.caption);
@@ -480,11 +593,13 @@
     const metricTotal = metricParts.reduce((total, [, , amount]) => total + Math.max(0, Number(amount) || 0), 0);
     metricParts.forEach(([key, , amount]) => {
       const value = Math.max(0, Number(amount) || 0);
-      $(`[data-wallet-segment="${key}"]`).style.width = `${metricTotal ? value / metricTotal * 100 : 0}%`;
+      const segment = $(`[data-wallet-segment="${key}"]`);
+      segment.style.width = `${metricTotal ? value / metricTotal * 100 : 0}%`;
+      segment.style.display = value > 0 ? "block" : "none";
     });
     $("#wallet-analytics").setAttribute("aria-label",
       `Relative metric comparison; segment widths represent ${metricParts.map(([label, name, amount]) => `${name.toLowerCase()} ${money(amount)}`).join(", ")}. These values are not a combined wallet balance.`);
-    const allDebtSummary = getDebtSummary(data.debts);
+    const allDebtSummary = getDebtSummary(data.debts, range);
     const openDebtCount = allDebtSummary.oweCount + allDebtSummary.owedCount;
     $("#debt-count").textContent = String(openDebtCount);
 
@@ -493,32 +608,75 @@
     preview.innerHTML = groups.length ? groups.map((group) =>
       `<div class="mini-savings"><span class="mini-savings-icon">✳</span><span><strong>${escapeHtml(group.name)}</strong><small>${group.purchases.length} buys · ${money(group.amount * 0.18)} possible savings</small></span></div>`
     ).join("") : '<p class="muted-small">Your repeat purchases will show up here.</p>';
-    renderSpendingInsights(expenses);
+    renderSpendingInsights(overviewExpenses, range);
+    renderDashboardSummary(overviewExpenses, range, presentation);
   }
 
-  function renderSpendingInsights(expenses) {
+  function renderDashboardSummary(expenses, range, presentation) {
+    const spent = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+    $("#dashboard-month-spend").textContent = money(spent);
+    const summaryLabel = $(".summary-primary .eyebrow");
+    if (summaryLabel) summaryLabel.textContent = presentation?.caption || "THIS MONTH";
+
+    const budgets = getBudgetPreferences();
+    const limits = Object.values(budgets).map(Number).filter((limit) => limit > 0);
+    const budgetTotal = limits.reduce((sum, limit) => sum + limit, 0);
+    const progress = $("#dashboard-budget-progress");
+    if (range) {
+      $("#dashboard-budget-remaining").textContent = `${expenses.length} transaction${expenses.length === 1 ? "" : "s"} in this period`;
+      progress.style.width = "0";
+      progress.classList.remove("over");
+    } else if (budgetTotal > 0) {
+      const percentage = budgetTotal ? Math.min(100, spent / budgetTotal * 100) : 0;
+      const remaining = budgetTotal - spent;
+      $("#dashboard-budget-remaining").textContent = remaining >= 0
+        ? `${money(remaining)} remaining across monthly budgets`
+        : `${money(Math.abs(remaining))} over monthly budgets`;
+      progress.style.width = `${percentage}%`;
+      progress.classList.toggle("over", remaining < 0);
+    } else {
+      $("#dashboard-budget-remaining").textContent = "Set category budgets in Settings";
+      progress.style.width = "0";
+    }
+
+    const categoryTotals = new Map();
+    expenses.forEach((expense) => categoryTotals.set(expense.category,
+      (categoryTotals.get(expense.category) || 0) + Number(expense.amount || 0)));
+    const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0];
+    if (topCategory) {
+      $("#dashboard-primary-insight").textContent = `${topCategory[0]} is the largest category`;
+      $("#dashboard-primary-detail").textContent = `${money(topCategory[1])} spent · ${spent ? Math.round(topCategory[1] / spent * 100) : 0}% of selected-period spending`;
+    } else {
+      $("#dashboard-primary-insight").textContent = "No spending in this period";
+      $("#dashboard-primary-detail").textContent = "Add an expense to begin your spending pattern analysis.";
+    }
+  }
+
+  function renderSpendingInsights(expenses, range) {
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
     const toISO = (date) => dateInputValue(date);
 
-    const currentMonth = expenses.filter((expense) => expense.date >= toISO(currentMonthStart));
-    const previousMonth = expenses.filter((expense) =>
+    const currentMonth = expenses;
+    const previousMonth = range ? [] : expenses.filter((expense) =>
       expense.date >= toISO(previousMonthStart) && expense.date <= toISO(previousMonthEnd)
     );
     const currentTotal = currentMonth.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
     const previousTotal = previousMonth.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
     const monthDifference = previousTotal ? (currentTotal - previousTotal) / previousTotal * 100 : 0;
     const weeklyTotals = [];
-    for (let offset = 21; offset >= 0; offset -= 7) {
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - offset);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      weeklyTotals.push(expenses
-        .filter((expense) => expense.date >= dateInputValue(weekStart) && expense.date <= dateInputValue(weekEnd))
-        .reduce((sum, expense) => sum + Number(expense.amount || 0), 0));
+    if (!range) {
+      for (let offset = 21; offset >= 0; offset -= 7) {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - offset);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weeklyTotals.push(expenses
+          .filter((expense) => expense.date >= dateInputValue(weekStart) && expense.date <= dateInputValue(weekEnd))
+          .reduce((sum, expense) => sum + Number(expense.amount || 0), 0));
+      }
     }
     let savingsStreak = 0;
     for (let index = weeklyTotals.length - 1; index > 0; index -= 1) {
@@ -562,7 +720,7 @@
       coach.push({
         icon: "◫",
         title: `${topCategory[0]} is your largest spending category`,
-        detail: `${money(topCategory[1])} · ${share}% of this month`
+        detail: `${money(topCategory[1])} · ${share}% of selected-period spending`
       });
     }
     if (overspent.length) {
@@ -587,7 +745,7 @@
       coach.push({ icon: "✓", title: "Your spending coach is ready", detail: "Add expenses to start seeing personalized insights" });
     }
 
-    $("#spending-coach").innerHTML = coach.slice(0, 4).map((insight) =>
+    $("#spending-coach").innerHTML = coach.slice(0, 2).map((insight) =>
       `<div class="coach-insight"><span class="coach-insight-icon">${insight.icon}</span><span><strong>${escapeHtml(insight.title)}</strong><small>${escapeHtml(insight.detail)}</small></span></div>`
     ).join("");
 
@@ -597,7 +755,7 @@
       const vendor = expense.vendor.trim();
       vendorTotals.set(vendor, (vendorTotals.get(vendor) || 0) + Number(expense.amount || 0));
     });
-    const vendors = [...vendorTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const vendors = [...vendorTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
     $("#vendor-ranking").innerHTML = vendors.length
       ? vendors.map(([vendor, amount], index) =>
         `<div class="vendor-row"><span class="vendor-rank">${index + 1}</span><span><strong>${escapeHtml(vendor)}</strong><small>Tracked spending</small></span><strong class="vendor-amount">${money(amount)}</strong></div>`
@@ -944,6 +1102,7 @@
     updateHomeClock(data.vault);
     renderBudgetSettings(data.expenses);
     renderDashboard(data);
+    arrangeDashboardLayout();
     renderVault(data.vault);
     renderExpenses(data.expenses);
     renderBudgetProgress(data.expenses);
@@ -959,6 +1118,16 @@
 
   function getRecordCount(data) {
     return data.vault.length + data.expenses.length + data.wallet.length + data.debts.length + (data.tasks?.length || 0) + (data.products?.length || 0);
+  }
+
+  function arrangeDashboardLayout() {
+    const dashboard = $("#view-dashboard");
+    const wallet = $(".finance-overview-grid", dashboard);
+    const insights = $(".spending-insights-grid", dashboard);
+    const sampleFooter = $("#sample-footer");
+    if (dashboard && wallet && insights && sampleFooter) {
+      dashboard.insertBefore(wallet, sampleFooter);
+    }
   }
 
   function setView(view) {
@@ -1708,8 +1877,11 @@
   }
 
   async function clearSamples() {
-    const [vault, expenses] = await Promise.all([database.all("vault"), database.all("expenses")]);
-    const samples = [...vault, ...expenses].filter((item) => item.sample);
+    const [vault, expenses, wallet, debts, tasks, products] = await Promise.all([
+      database.all("vault"), database.all("expenses"), database.all("wallet"),
+      database.all("debts"), database.all("tasks"), database.all("products")
+    ]);
+    const samples = [...vault, ...expenses, ...wallet, ...debts, ...tasks, ...products].filter((item) => item.sample);
     if (!samples.length) {
       showToast("There is no sample data to clear.");
       return;
@@ -1717,7 +1889,11 @@
     if (!window.confirm(`Remove ${samples.length} sample record${samples.length === 1 ? "" : "s"}? Your own records will stay.`)) return;
     await Promise.all([
       ...vault.filter((item) => item.sample).map((item) => database.delete("vault", item.id)),
-      ...expenses.filter((item) => item.sample).map((item) => database.delete("expenses", item.id))
+      ...expenses.filter((item) => item.sample).map((item) => database.delete("expenses", item.id)),
+      ...wallet.filter((item) => item.sample).map((item) => database.delete("wallet", item.id)),
+      ...debts.filter((item) => item.sample).map((item) => database.delete("debts", item.id)),
+      ...tasks.filter((item) => item.sample).map((item) => database.delete("tasks", item.id)),
+      ...products.filter((item) => item.sample).map((item) => database.delete("products", item.id))
     ]);
     await refresh();
     showToast("Sample data cleared.");

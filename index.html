@@ -79,72 +79,19 @@
             <p class="overview-filter-error" id="overview-filter-error" role="alert" hidden></p>
           </div>
           <div class="section-heading"><div><p class="eyebrow">AT A GLANCE</p><h2>Your overview</h2></div><span class="updated-label"><span class="live-dot"></span> Updated just now</span></div>
-          <div class="kpi-grid">
-            <article class="kpi-card">
-              <div class="kpi-top"><span class="kpi-icon metric-icon icon-red" aria-hidden="true">
-                <svg viewBox="0 0 48 48" fill="none">
-                  <defs><linearGradient id="bell-front" x1="13" y1="8" x2="35" y2="39" gradientUnits="userSpaceOnUse"><stop stop-color="#FFB9BD"/><stop offset=".52" stop-color="#F47782"/><stop offset="1" stop-color="#D8495C"/></linearGradient><linearGradient id="bell-side" x1="30" y1="17" x2="40" y2="34" gradientUnits="userSpaceOnUse"><stop stop-color="#EB6874"/><stop offset="1" stop-color="#B9314A"/></linearGradient></defs>
-                  <ellipse cx="24" cy="41" rx="14" ry="3" fill="#D94E63" fill-opacity=".2"/>
-                  <path d="M14 31c2.4-2.7 3.2-5.5 3.2-10.4a6.8 6.8 0 0 1 13.6 0c0 4.9.8 7.7 3.2 10.4 1 1.1.2 3-1.3 3H15.3c-1.5 0-2.3-1.9-1.3-3Z" fill="url(#bell-front)"/>
-                  <path d="M30.8 14.5c2.1 1.2 3.5 3.5 3.5 6.1 0 4.9.8 7.7 3.2 10.4 1 1.1.2 3-1.3 3h-5.4V14.5Z" fill="url(#bell-side)"/>
-                  <path d="M20 14.3a5.9 5.9 0 0 1 8.3 1.4" stroke="#FFF" stroke-opacity=".72" stroke-width="2.2" stroke-linecap="round"/>
-                  <path d="M21 36.2h6a3 3 0 0 1-6 0Z" fill="#C64054"/>
-                  <circle cx="24" cy="7.5" r="2" fill="#EE7580"/>
-                  <path d="M24 9.5v3" stroke="#D64E61" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </span></div>
-              <p class="kpi-label">Urgent alerts</p><div class="kpi-bottom"><strong id="urgent-value">0</strong></div>
-            </article>
-            <article class="kpi-card">
-              <div class="kpi-top"><span class="kpi-icon metric-icon icon-blue" aria-hidden="true">
-                <svg viewBox="0 0 48 48" fill="none">
-                  <defs><linearGradient id="wallet-body" x1="8" y1="10" x2="39" y2="40" gradientUnits="userSpaceOnUse"><stop stop-color="#9CCBFF"/><stop offset=".48" stop-color="#5597E7"/><stop offset="1" stop-color="#3562BD"/></linearGradient><linearGradient id="wallet-flap" x1="25" y1="19" x2="41" y2="34" gradientUnits="userSpaceOnUse"><stop stop-color="#72AEF1"/><stop offset="1" stop-color="#3C69C1"/></linearGradient></defs>
-                  <ellipse cx="24" cy="40" rx="16" ry="3" fill="#3972C7" fill-opacity=".2"/>
-                  <path d="M10 15.5 31.7 9l5.8 6.1v4H10v-3.6Z" fill="#A9D2FF"/>
-                  <path d="m13.5 17 18-5.4 4.1 4.3v3.2H13.5V17Z" fill="#E9F4FF" fill-opacity=".78"/>
-                  <path d="M9 17.5h27.5A3.5 3.5 0 0 1 40 21v13.5a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4v-14a3 3 0 0 1 1-3Z" fill="url(#wallet-body)"/>
-                  <path d="M27 21.5h13v9H27a4.5 4.5 0 1 1 0-9Z" fill="url(#wallet-flap)"/>
-                  <path d="M27 22.8h11.7v6.5H27a3.3 3.3 0 1 1 0-6.5Z" fill="#8CC1FF" fill-opacity=".7"/>
-                  <circle cx="31" cy="26" r="1.5" fill="#F7FBFF"/>
-                  <path d="M11 20.5h12" stroke="#DCEEFF" stroke-opacity=".72" stroke-width="1.7" stroke-linecap="round"/>
-                </svg>
-              </span></div>
-              <p class="kpi-label" id="spend-label">All-time spend</p><div class="kpi-bottom"><strong id="spend-value">AED 0</strong></div>
-            </article>
-            <article class="kpi-card">
-              <div class="kpi-top"><span class="kpi-icon metric-icon icon-purple" aria-hidden="true">
-                <svg viewBox="0 0 48 48" fill="none">
-                  <defs><linearGradient id="coin-side" x1="13" y1="23" x2="35" y2="39" gradientUnits="userSpaceOnUse"><stop stop-color="#F5C96F"/><stop offset=".55" stop-color="#E9A83F"/><stop offset="1" stop-color="#BD7425"/></linearGradient><linearGradient id="coin-top" x1="15" y1="9" x2="34" y2="24" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF0A9"/><stop offset=".55" stop-color="#FFD66F"/><stop offset="1" stop-color="#F1AD43"/></linearGradient></defs>
-                  <ellipse cx="24" cy="40" rx="15" ry="3" fill="#C47D2D" fill-opacity=".2"/>
-                  <path d="M11 28v5.5c0 3.2 5.8 5.8 13 5.8s13-2.6 13-5.8V28H11Z" fill="url(#coin-side)"/>
-                  <ellipse cx="24" cy="27.8" rx="13" ry="5.8" fill="#FFE18A"/>
-                  <path d="M14 21v5c0 2.8 4.5 5.1 10 5.1s10-2.3 10-5.1v-5H14Z" fill="#E8A33D"/>
-                  <ellipse cx="24" cy="20.8" rx="10" ry="4.8" fill="#FFD269"/>
-                  <path d="M16 14v4.3c0 2.3 3.6 4.1 8 4.1s8-1.8 8-4.1V14H16Z" fill="url(#coin-side)"/>
-                  <ellipse cx="24" cy="13.8" rx="8" ry="4.2" fill="url(#coin-top)"/>
-                  <path d="M19.5 13.8h9" stroke="#D08A2E" stroke-width="1.6" stroke-linecap="round"/>
-                  <path d="M14.7 28.5c1.7 1.1 4.1 1.8 6.8 2" stroke="#FFF4C6" stroke-opacity=".8" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </span></div>
-              <p class="kpi-label" id="savings-label">Est. bulk savings</p><div class="kpi-bottom"><strong id="savings-value">AED 0</strong></div>
-            </article>
-            <article class="kpi-card">
-              <div class="kpi-top"><span class="kpi-icon metric-icon icon-gold" aria-hidden="true">
-                <svg viewBox="0 0 48 48" fill="none">
-                  <defs><linearGradient id="gem-left" x1="9" y1="12" x2="24" y2="38" gradientUnits="userSpaceOnUse"><stop stop-color="#A99BFF"/><stop offset="1" stop-color="#6758D5"/></linearGradient><linearGradient id="gem-right" x1="25" y1="11" x2="40" y2="36" gradientUnits="userSpaceOnUse"><stop stop-color="#E1D9FF"/><stop offset=".52" stop-color="#9C8AEC"/><stop offset="1" stop-color="#5848C3"/></linearGradient></defs>
-                  <ellipse cx="24" cy="40" rx="14" ry="3" fill="#6654CC" fill-opacity=".2"/>
-                  <path d="m13 12 7-4h8l7 4 5 8-16 19L8 20l5-8Z" fill="#B7ABFF"/>
-                  <path d="m13 12 7-4 4 9-9 3-7 0 5-8Z" fill="#E8E3FF"/>
-                  <path d="m20 8 4 9 4-9h-8Z" fill="#CFC6FF"/>
-                  <path d="m24 17 9 3 7 0-16 19V17Z" fill="url(#gem-right)"/>
-                  <path d="m15 20 9-3v22L8 20h7Z" fill="url(#gem-left)"/>
-                  <path d="m13 12 7-4h8l7 4 5 8-16 19L8 20l5-8Z" stroke="#FFF" stroke-opacity=".68" stroke-width="1.3" stroke-linejoin="round"/>
-                  <path d="m15 20 9 19 9-19" stroke="#E8E3FF" stroke-opacity=".65" stroke-width="1.2" stroke-linejoin="round"/>
-                </svg>
-              </span></div>
-              <p class="kpi-label">Saved items / points value</p><div class="kpi-bottom"><strong id="value-value">AED 0</strong></div>
-            </article>
+          <section class="panel dashboard-summary-card" aria-label="Monthly spending summary">
+            <div class="summary-primary"><p class="eyebrow">THIS MONTH</p><strong id="dashboard-month-spend">AED 0</strong><span id="dashboard-budget-remaining">Set a budget to track remaining spend</span><div class="summary-progress" aria-hidden="true"><span id="dashboard-budget-progress"></span></div></div>
+            <div class="summary-insight"><span class="summary-insight-icon">✦</span><div><p class="eyebrow">TODAY'S INSIGHT</p><strong id="dashboard-primary-insight">Add expenses to start seeing patterns</strong><small id="dashboard-primary-detail">LifeVault analyzes your activity privately on this device.</small></div></div>
+          </section>
+          <div class="dashboard-columns">
+            <section class="panel upcoming-panel"><div class="panel-heading"><div><p class="eyebrow">STAY AHEAD</p><h2>Coming up</h2></div><button class="text-button" data-view="vault">View all <span>→</span></button></div><div id="upcoming-list" class="compact-list"></div></section>
+            <section class="panel spend-panel"><div class="panel-heading"><div><p class="eyebrow">SPENDING MIX</p><h2 id="dashboard-spend-title">Spending · all time</h2></div><button class="text-button" data-view="expenses">Details <span>→</span></button></div><div id="dashboard-breakdown" class="category-bars"></div><div class="privacy-footnote"><span>◈</span> Only you can see your spending</div></section>
           </div>
+          <div class="spending-insights-grid">
+            <section class="panel savings-coach-panel"><div class="panel-heading"><div><p class="eyebrow">SMART SPENDING COACH</p><h2>Your money insights</h2></div></div><div id="spending-coach" class="spending-coach-list"></div></section>
+            <section class="panel vendor-ranking-panel"><div class="panel-heading"><div><p class="eyebrow">VENDOR TRACKER</p><h2>Most expensive vendors</h2></div></div><div id="vendor-ranking" class="vendor-ranking-list"></div></section>
+          </div>
+          <section class="panel savings-preview"><div class="panel-heading"><div><p class="eyebrow">BUY SMARTER</p><h2>Small habits, smarter savings</h2></div><button class="text-button" data-view="bulk">See recommendations <span>→</span></button></div><div id="dashboard-savings" class="savings-mini-grid"></div></section>
           <div class="finance-overview-grid">
             <section class="panel wallet-panel">
               <div class="wallet-header-row"><p class="eyebrow">YOUR WALLET</p><strong id="wallet-available">AED 0</strong><div class="wallet-header-actions"><button class="button button-primary button-small" data-action="add-funds">＋ Add funds</button><button class="button button-secondary button-small" data-action="add-debt">＋ Add debt</button></div></div>
@@ -166,15 +113,6 @@
               </div>
               <p class="wallet-note">Your expenses since the first top-up are deducted; sample entries and debts stay separate.</p>
             </section>
-          </div>
-          <div class="dashboard-columns">
-            <section class="panel upcoming-panel"><div class="panel-heading"><div><p class="eyebrow">STAY AHEAD</p><h2>Coming up</h2></div><button class="text-button" data-view="vault">View all <span>→</span></button></div><div id="upcoming-list" class="compact-list"></div></section>
-            <section class="panel spend-panel"><div class="panel-heading"><div><p class="eyebrow">MONEY MOMENT</p><h2 id="dashboard-spend-title">Spending · all time</h2></div><button class="text-button" data-view="expenses">Details <span>→</span></button></div><div id="dashboard-breakdown" class="category-bars"></div><div class="privacy-footnote"><span>◈</span> Only you can see your spending</div></section>
-          </div>
-          <section class="panel savings-preview"><div class="panel-heading"><div><p class="eyebrow">BUY SMARTER</p><h2>Small habits, smarter savings</h2></div><button class="text-button" data-view="bulk">See recommendations <span>→</span></button></div><div id="dashboard-savings" class="savings-mini-grid"></div></section>
-          <div class="spending-insights-grid">
-            <section class="panel savings-coach-panel"><div class="panel-heading"><div><p class="eyebrow">SMART SPENDING COACH</p><h2>Your money insights</h2></div></div><div id="spending-coach" class="spending-coach-list"></div></section>
-            <section class="panel vendor-ranking-panel"><div class="panel-heading"><div><p class="eyebrow">VENDOR TRACKER</p><h2>Most expensive vendors</h2></div></div><div id="vendor-ranking" class="vendor-ranking-list"></div></section>
           </div>
           <div class="sample-footer" id="sample-footer" hidden><span>Sample data is active</span><button class="text-button" data-action="clear-samples">Clear sample data</button></div>
         </section>
