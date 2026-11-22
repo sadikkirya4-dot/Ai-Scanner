@@ -19,7 +19,12 @@
       "Dining & Coffee": "☕",
       "Fuel & Transport": "⛽",
       Utilities: "⌂",
-      Shopping: "🛍"
+      Shopping: "🛍",
+      Healthcare: "✚",
+      Education: "🎓",
+      Entertainment: "🎬",
+      Travel: "✈",
+      "Gifts & charity": "🎁"
     }
   };
   const CURRENCY_SYMBOLS = { AED: "AED", USD: "$", EUR: "€", GBP: "£", SAR: "SAR" };
@@ -313,6 +318,20 @@
         }
         await database.put("meta", { key: "rich-debt-samples-v1", value: true });
       }
+      const richCategorySeed = await database.get("meta", "rich-category-samples-v1");
+      if (!richCategorySeed?.value) {
+        const expenses = await database.all("expenses");
+        const categorySamples = [
+          { id: "sample-healthcare-1", name: "Dental checkup", productId: "", category: "Healthcare", vendor: "Smile Dental Clinic", amount: 350, quantity: 1, unitPrice: 350, vat: 5, date: dateOffset(-11), sample: true, createdAt: Date.now() - 1500 },
+          { id: "sample-education-1", name: "Online design course", productId: "", category: "Education", vendor: "Udemy", amount: 89, quantity: 1, unitPrice: 89, vat: 5, date: dateOffset(-19), sample: true, createdAt: Date.now() - 1490 },
+          { id: "sample-entertainment-1", name: "Cinema tickets", productId: "", category: "Entertainment", vendor: "VOX Cinemas", amount: 126, quantity: 2, unitPrice: 63, vat: 5, date: dateOffset(-14), sample: true, createdAt: Date.now() - 1480 },
+          { id: "sample-travel-1", name: "Weekend hotel stay", productId: "", category: "Travel", vendor: "Booking.com", amount: 640, quantity: 1, unitPrice: 640, vat: 5, date: dateOffset(-38), sample: true, createdAt: Date.now() - 1470 },
+          { id: "sample-charity-1", name: "Charity donation", productId: "", category: "Gifts & charity", vendor: "Red Crescent", amount: 200, quantity: 1, unitPrice: 200, vat: 0, date: dateOffset(-25), sample: true, createdAt: Date.now() - 1460 }
+        ];
+        await Promise.all(categorySamples.filter((sample) => !expenses.some((expense) => expense.id === sample.id))
+          .map((expense) => database.put("expenses", expense)));
+        await database.put("meta", { key: "rich-category-samples-v1", value: true });
+      }
       return;
     }
     const [vault, expenses, wallet, debts, tasks, products] = await Promise.all([
@@ -366,7 +385,12 @@
       { id: "sample-shopping-1", name: "Running shoes", productId: "sample-product-shoes", category: "Shopping", vendor: "Nike Store", amount: 480, quantity: 1, unitPrice: 480, vat: 5, date: dateOffset(-7), sample: true, createdAt: now - 1900 },
       { id: "sample-shopping-2", name: "Office headphones", productId: "", category: "Shopping", vendor: "Amazon.ae", amount: 325, quantity: 1, unitPrice: 325, vat: 5, date: dateOffset(-24), sample: true, createdAt: now - 1800 },
       { id: "sample-grocery-5", name: "Whole milk", productId: "sample-product-milk", category: "Groceries", vendor: "Carrefour", amount: 74.4, quantity: 6, unitPrice: 12.4, vat: 5, date: dateOffset(-35), sample: true, createdAt: now - 1700 },
-      { id: "sample-grocery-6", name: "Pantry groceries", category: "Groceries", vendor: "Lulu Hypermarket", amount: 96, quantity: 1, unitPrice: 96, vat: 5, date: dateOffset(-48), sample: true, createdAt: now - 1600 }
+      { id: "sample-grocery-6", name: "Pantry groceries", category: "Groceries", vendor: "Lulu Hypermarket", amount: 96, quantity: 1, unitPrice: 96, vat: 5, date: dateOffset(-48), sample: true, createdAt: now - 1600 },
+      { id: "sample-healthcare-1", name: "Dental checkup", productId: "", category: "Healthcare", vendor: "Smile Dental Clinic", amount: 350, quantity: 1, unitPrice: 350, vat: 5, date: dateOffset(-11), sample: true, createdAt: now - 1500 },
+      { id: "sample-education-1", name: "Online design course", productId: "", category: "Education", vendor: "Udemy", amount: 89, quantity: 1, unitPrice: 89, vat: 5, date: dateOffset(-19), sample: true, createdAt: now - 1490 },
+      { id: "sample-entertainment-1", name: "Cinema tickets", productId: "", category: "Entertainment", vendor: "VOX Cinemas", amount: 126, quantity: 2, unitPrice: 63, vat: 5, date: dateOffset(-14), sample: true, createdAt: now - 1480 },
+      { id: "sample-travel-1", name: "Weekend hotel stay", productId: "", category: "Travel", vendor: "Booking.com", amount: 640, quantity: 1, unitPrice: 640, vat: 5, date: dateOffset(-38), sample: true, createdAt: now - 1470 },
+      { id: "sample-charity-1", name: "Charity donation", productId: "", category: "Gifts & charity", vendor: "Red Crescent", amount: 200, quantity: 1, unitPrice: 200, vat: 0, date: dateOffset(-25), sample: true, createdAt: now - 1460 }
     ];
     const walletSamples = [
       { id: "sample-wallet-1", amount: 8500, date: dateOffset(-90), note: "Monthly salary", sample: true, createdAt: now - 1500 },
@@ -576,19 +600,17 @@
     const debtSummary = getDebtSummary(data.debts, range);
     $("#wallet-available").textContent = money(walletSummary.available);
     $("#wallet-out-of").textContent = range
-      ? `Balance as of ${localDate(walletSummary.asOfDate)}`
-      : `of ${money(walletSummary.totalAdded)} added`;
+      ? `Available as of ${localDate(walletSummary.asOfDate)}`
+      : `${money(walletSummary.available)} currently available`;
     $("#wallet-spent").textContent = money(walletSummary.spent);
     $("#wallet-added").textContent = money(walletSummary.totalAdded);
-    $("#wallet-savings").textContent = money(savings);
     $("#dashboard-owe").textContent = money(debtSummary.owe);
     $("#dashboard-owed").textContent = money(debtSummary.owed);
     const metricParts = [
       ["spent", "Spent", walletSummary.spent],
-      ["added", "Funds added", walletSummary.totalAdded],
+      ["added", "Available funds", walletSummary.available],
       ["owe", "I owe", debtSummary.owe],
-      ["owed", "Owed to me", debtSummary.owed],
-      ["savings", "Estimated savings", savings]
+      ["owed", "Owed to me", debtSummary.owed]
     ];
     const metricTotal = metricParts.reduce((total, [, , amount]) => total + Math.max(0, Number(amount) || 0), 0);
     metricParts.forEach(([key, , amount]) => {
@@ -598,7 +620,7 @@
       segment.style.display = value > 0 ? "block" : "none";
     });
     $("#wallet-analytics").setAttribute("aria-label",
-      `Relative metric comparison; segment widths represent ${metricParts.map(([label, name, amount]) => `${name.toLowerCase()} ${money(amount)}`).join(", ")}. These values are not a combined wallet balance.`);
+      `Relative metric comparison; segment widths represent ${metricParts.map(([, name, amount]) => `${name.toLowerCase()} ${money(amount)}`).join(", ")}. These values are not a combined wallet balance.`);
     const allDebtSummary = getDebtSummary(data.debts, range);
     const openDebtCount = allDebtSummary.oweCount + allDebtSummary.owedCount;
     $("#debt-count").textContent = String(openDebtCount);
@@ -609,47 +631,6 @@
       `<div class="mini-savings"><span class="mini-savings-icon">✳</span><span><strong>${escapeHtml(group.name)}</strong><small>${group.purchases.length} buys · ${money(group.amount * 0.18)} possible savings</small></span></div>`
     ).join("") : '<p class="muted-small">Your repeat purchases will show up here.</p>';
     renderSpendingInsights(overviewExpenses, range);
-    renderDashboardSummary(overviewExpenses, range, presentation);
-  }
-
-  function renderDashboardSummary(expenses, range, presentation) {
-    const spent = expenses.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-    $("#dashboard-month-spend").textContent = money(spent);
-    const summaryLabel = $(".summary-primary .eyebrow");
-    if (summaryLabel) summaryLabel.textContent = presentation?.caption || "THIS MONTH";
-
-    const budgets = getBudgetPreferences();
-    const limits = Object.values(budgets).map(Number).filter((limit) => limit > 0);
-    const budgetTotal = limits.reduce((sum, limit) => sum + limit, 0);
-    const progress = $("#dashboard-budget-progress");
-    if (range) {
-      $("#dashboard-budget-remaining").textContent = `${expenses.length} transaction${expenses.length === 1 ? "" : "s"} in this period`;
-      progress.style.width = "0";
-      progress.classList.remove("over");
-    } else if (budgetTotal > 0) {
-      const percentage = budgetTotal ? Math.min(100, spent / budgetTotal * 100) : 0;
-      const remaining = budgetTotal - spent;
-      $("#dashboard-budget-remaining").textContent = remaining >= 0
-        ? `${money(remaining)} remaining across monthly budgets`
-        : `${money(Math.abs(remaining))} over monthly budgets`;
-      progress.style.width = `${percentage}%`;
-      progress.classList.toggle("over", remaining < 0);
-    } else {
-      $("#dashboard-budget-remaining").textContent = "Set category budgets in Settings";
-      progress.style.width = "0";
-    }
-
-    const categoryTotals = new Map();
-    expenses.forEach((expense) => categoryTotals.set(expense.category,
-      (categoryTotals.get(expense.category) || 0) + Number(expense.amount || 0)));
-    const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0];
-    if (topCategory) {
-      $("#dashboard-primary-insight").textContent = `${topCategory[0]} is the largest category`;
-      $("#dashboard-primary-detail").textContent = `${money(topCategory[1])} spent · ${spent ? Math.round(topCategory[1] / spent * 100) : 0}% of selected-period spending`;
-    } else {
-      $("#dashboard-primary-insight").textContent = "No spending in this period";
-      $("#dashboard-primary-detail").textContent = "Add an expense to begin your spending pattern analysis.";
-    }
   }
 
   function renderSpendingInsights(expenses, range) {

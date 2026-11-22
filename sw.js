@@ -1,4 +1,4 @@
-const CACHE_NAME = "lifevault-shell-v12";
+const CACHE_NAME = "lifevault-shell-v16";
 const APP_SHELL = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {
