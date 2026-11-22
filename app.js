@@ -232,6 +232,24 @@
     return [date, time, countdownLabel(item.date, item.time, item.done)].filter(Boolean).join(" · ");
   }
 
+  async function renderHomeSearch(query) {
+    const box = $("#home-search-results");
+    const normalized = query.trim().toLocaleLowerCase();
+    if (!normalized) { box.hidden = true; box.replaceChildren(); return; }
+    const [vault, expenses, debts] = await Promise.all([
+      database.all("vault"), database.all("expenses"), database.all("debts")
+    ]);
+    const matches = [
+      ...vault.map((item) => ({ text: `${item.name} ${item.category} ${item.reference || ""}`, label: "Reminder", view: "vault" })),
+      ...expenses.map((item) => ({ text: `${item.name} ${item.category}`, label: "Expense", view: "expenses" })),
+      ...debts.map((item) => ({ text: `${item.person} ${item.note || ""}`, label: "Debt", view: "debts" }))
+    ].filter((item) => item.text.toLocaleLowerCase().includes(normalized)).slice(0, 8);
+    box.hidden = false;
+    box.innerHTML = matches.length
+      ? matches.map((item) => `<button class="home-search-result" type="button" data-view="${item.view}"><strong>${escapeHtml(item.text)}</strong><span>${item.label}</span></button>`).join("")
+      : '<p class="home-search-empty">No matching records</p>';
+  }
+
   function getUrgency(date, done) {
     if (done) return { text: "Completed", className: "badge-done" };
     const days = dayDifference(date);
@@ -774,13 +792,44 @@
     $$(".form-currency").forEach((element) => { element.textContent = currency; });
   }
 
+  function getBudgetPreferences() {
+    try { return JSON.parse(localStorage.getItem("lifevault-budgets") || "{}"); }
+    catch { return {}; }
+  }
+
+  function renderBudgetSettings(expenses) {
+    const container = $("#budget-settings");
+    if (!container) return;
+    const budgets = getBudgetPreferences();
+    container.innerHTML = Object.keys(CATEGORIES.expense).map((category) => `
+      <label>${escapeHtml(category)}<input type="number" min="0" step="1" data-budget-category="${escapeHtml(category)}" value="${Number(budgets[category] || 0)}" aria-label="${escapeHtml(category)} monthly budget"></label>
+    `).join("");
+  }
+
+  function renderBudgetProgress(expenses) {
+    const budgets = getBudgetPreferences();
+    const month = todayISO().slice(0, 7);
+    const active = Object.entries(budgets).filter(([, limit]) => Number(limit) > 0);
+    const panel = $("#budget-progress-panel");
+    if (!panel) return;
+    panel.hidden = active.length === 0;
+    $("#budget-progress").innerHTML = active.map(([category, limit]) => {
+      const spent = expenses.filter((expense) => expense.category === category && expense.date.startsWith(month))
+        .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+      const percentage = Math.min(100, Math.round(spent / Number(limit) * 100));
+      return `<div class="budget-bar"><div><strong>${escapeHtml(category)}</strong><span>${money(spent)} / ${money(limit)}</span></div><div class="bar-track"><div class="bar-fill${percentage >= 100 ? " budget-over" : ""}" style="width:${percentage}%"></div></div></div>`;
+    }).join("");
+  }
+
   async function refresh() {
     const data = await loadAll();
     homeVault = data.vault;
     updateHomeClock(data.vault);
+    renderBudgetSettings(data.expenses);
     renderDashboard(data);
     renderVault(data.vault);
     renderExpenses(data.expenses);
+    renderBudgetProgress(data.expenses);
     renderWalletLedger(data.wallet);
     renderDebts(data.debts);
     await renderBulk(data);
@@ -823,6 +872,7 @@
     form.elements.category.value = item?.category || "IDs & travel";
     form.elements.date.value = item?.date || todayISO();
     form.elements.time.value = item?.time || "";
+    form.elements.recurrence.value = item?.recurrence || "none";
     form.elements.reference.value = item?.reference || "";
     form.elements.value.value = item?.value || "";
     form.elements.notes.value = item?.notes || "";
@@ -954,6 +1004,7 @@
       category: form.elements.category.value,
       date: form.elements.date.value,
       time: form.elements.time.value,
+      recurrence: form.elements.recurrence.value,
       reference: form.elements.reference.value.trim(),
       value: Number(form.elements.value.value) || 0,
       notes: form.elements.notes.value.trim(),
@@ -973,6 +1024,14 @@
     const id = form.elements.id.value;
     if (!id && !(await canAddRecord())) return;
     const existing = id ? await database.get("expenses", id) : null;
+    if (!id) {
+      const duplicate = (await database.all("expenses")).find((entry) =>
+        entry.name.toLocaleLowerCase() === form.elements.name.value.trim().toLocaleLowerCase()
+        && entry.amount === Number(form.elements.amount.value)
+        && entry.date === form.elements.date.value
+      );
+      if (duplicate && !window.confirm("A similar expense already exists. Save it anyway?")) return;
+    }
     const selectedFile = form.elements.receipt.files[0];
     if (selectedFile && (!selectedFile.type.startsWith("image/") || selectedFile.size > MAX_RECEIPT_BYTES)) {
       showToast("Choose an image smaller than 8 MB.", "error");
@@ -1121,7 +1180,8 @@
         else {
           const date = new Date(`${item.date}T12:00:00`);
           if (Number.isNaN(date.getTime())) throw new Error("This item's date is invalid. Edit the date before renewing.");
-          date.setFullYear(date.getFullYear() + 1);
+          if (item.recurrence === "monthly") date.setMonth(date.getMonth() + 1);
+          else date.setFullYear(date.getFullYear() + 1);
           item.date = dateInputValue(date);
         }
         await database.put("vault", item);
@@ -1519,6 +1579,12 @@
       case "clear-shopping": await clearShopping(); break;
       case "export": await exportBackup(); break;
       case "restore": $("#restore-file").click(); break;
+      case "install-app":
+        if (!deferredPrompt) { showToast("LifeVault is already installed or this browser does not offer installation."); break; }
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        break;
       case "remove-receipt":
         expenseReceipt = null;
         $("#expense-form").elements.receipt.value = "";
@@ -1580,6 +1646,24 @@
     $("#debt-form").elements.amount.addEventListener("input", (event) => {
       if (!$("#debt-form").elements.id.value) $("#debt-form").elements.remaining.value = event.target.value;
     });
+    $("#home-search").addEventListener("input", (event) => {
+      renderHomeSearch(event.target.value).catch((error) => reportError(error, "Could not search LifeVault"));
+    });
+    $("#reminder-offset").value = readPreference("lifevault-reminder-offset", "7");
+    $("#reminder-offset").addEventListener("change", (event) => {
+      savePreference("lifevault-reminder-offset", event.target.value);
+      showToast("Reminder preference saved.");
+    });
+    $("#budget-settings").addEventListener("change", (event) => {
+      if (!event.target.dataset.budgetCategory) return;
+      const budgets = getBudgetPreferences();
+      budgets[event.target.dataset.budgetCategory] = Number(event.target.value) || 0;
+      savePreference("lifevault-budgets", JSON.stringify(budgets));
+      refresh().catch((error) => reportError(error, "Could not update budgets"));
+      showToast("Monthly budget updated.");
+    });
+    window.addEventListener("offline", () => { $("#offline-banner").hidden = false; });
+    window.addEventListener("online", () => { $("#offline-banner").hidden = true; showToast("You are back online."); });
     $("#vault-search").addEventListener("input", () => database.all("vault").then(renderVault).catch((error) => reportError(error, "Could not search vault")));
     $("#vault-filter").addEventListener("change", () => database.all("vault").then(renderVault).catch((error) => reportError(error, "Could not filter vault")));
     $("#expense-search").addEventListener("input", () => database.all("expenses").then(renderExpenses).catch((error) => reportError(error, "Could not search expenses")));
@@ -1680,6 +1764,11 @@
       await seedSamplesIfEmpty();
       bindEvents();
       await refresh();
+      $("#offline-banner").hidden = navigator.onLine;
+      if (!readPreference("lifevault-onboarding", "")) {
+        savePreference("lifevault-onboarding", "seen");
+        showToast("Welcome to LifeVault. Start with Settings to choose your currency and budgets.");
+      }
       window.setInterval(() => updateHomeClock(homeVault), 1000);
       window.setInterval(() => {
         refresh().catch((error) => reportError(error, "Could not refresh countdown"));

@@ -12,6 +12,7 @@
   <script src="app.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <div class="app-shell">
     <aside class="sidebar" aria-label="Main navigation">
       <a class="brand" href="#" data-view="dashboard" aria-label="LifeVault home">
@@ -39,20 +40,16 @@
       </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" id="main-content">
       <header class="topbar">
         <div class="mobile-brand"><span class="brand-mark">⌂</span> LifeVault</div>
         <div class="breadcrumbs"><span>Workspace</span><span class="crumb-slash">/</span><strong id="page-title">Overview</strong></div>
         <div class="top-actions">
-          <label class="sr-only" for="currency-select">Display currency</label>
-          <select id="currency-select" class="currency-select" aria-label="Display currency">
-            <option value="AED">AED د.إ</option><option value="USD">USD $</option><option value="EUR">EUR €</option><option value="GBP">GBP £</option><option value="SAR">SAR ر.س</option>
-          </select>
           <button class="icon-button theme-toggle" aria-label="Switch to dark mode" aria-pressed="false" title="Toggle light and dark mode">
             <span class="theme-icon" aria-hidden="true">☾</span>
             <span class="theme-switch-track" aria-hidden="true"><i></i></span>
           </button>
-          <button class="button button-primary top-add" data-action="quick-add"><span>＋</span> Add new</button>
+          <button class="icon-button top-add" data-action="quick-add" aria-label="Add new"><span aria-hidden="true">＋</span></button>
         </div>
       </header>
 
@@ -60,9 +57,12 @@
         <section class="view active" id="view-dashboard" aria-labelledby="welcome-title">
           <div class="welcome-row">
             <div><p class="eyebrow dashboard-date-line"><span id="today-label">—</span><span id="home-time">—</span><span id="home-countdown">—</span></p><h1 id="welcome-title">A little more <span>peace of mind.</span></h1><p class="subtitle">Your essentials, expenses, and reminders—all in one private place.</p></div>
-            <button class="button button-secondary desktop-quick" data-action="quick-add">＋ Quick add</button>
+            <button class="icon-button top-add" data-action="quick-add" aria-label="Add new"><span aria-hidden="true">＋</span></button>
           </div>
+          <div class="home-search"><span aria-hidden="true">⌕</span><input id="home-search" type="search" placeholder="Search reminders, expenses, and debts…" aria-label="Search LifeVault"></div>
+          <div class="home-search-results" id="home-search-results" hidden></div>
           <div class="privacy-banner"><span class="privacy-icon">◈</span><span><strong>Your data never leaves this device.</strong> Everything is saved locally in your browser.</span><button class="text-button" data-view="settings">Learn more <span>→</span></button></div>
+          <div class="privacy-banner offline-banner" id="offline-banner" hidden><span class="privacy-icon">⌁</span><span><strong>You are offline.</strong> LifeVault remains available and data stays on this device.</span></div>
           <div class="panel overview-filter-card">
             <span class="overview-filter-label">FILTER OVERVIEW</span>
             <div class="overview-filter-options" role="group" aria-label="Filter dashboard by date">
@@ -185,6 +185,7 @@
         <section class="view" id="view-expenses" aria-labelledby="expenses-title">
           <div class="view-heading"><div><p class="eyebrow">YOUR MONEY, MADE CLEAR</p><h1 id="expenses-title">Know where it <span>goes.</span></h1><p class="subtitle">Private expense tracking, with receipt scanning that works right here in your browser.</p></div><button class="button button-primary" data-action="add-expense">＋ Add expense</button></div>
           <div class="expense-summary"><div><span class="kpi-icon icon-blue">↗</span><span><small id="expense-period-caption">THIS MONTH</small><strong id="expense-month-total">AED 0</strong></span></div><span id="expense-entry-count">0 transactions this month</span></div>
+          <div class="panel budget-progress-panel" id="budget-progress-panel" hidden><div class="panel-heading"><div><p class="eyebrow">MONTHLY BUDGET</p><h2>Category limits</h2></div></div><div id="budget-progress" class="budget-progress"></div></div>
           <div class="panel monthly-panel">
             <div class="panel-heading"><div><p class="eyebrow">SPENDING MIX</p><h2>Expense breakdown</h2></div></div>
             <div class="chart-controls">
@@ -234,9 +235,13 @@
         <section class="view" id="view-settings" aria-labelledby="settings-title">
           <div class="view-heading"><div><p class="eyebrow">YOUR DEVICE, YOUR CHOICE</p><h1 id="settings-title">Data & <span>settings.</span></h1><p class="subtitle">Your LifeVault belongs to you. Manage its privacy and data here.</p></div></div>
           <div class="settings-grid">
+            <section class="panel settings-card"><div class="settings-icon icon-red">◷</div><div><h2>Reminder preferences</h2><p>Choose when upcoming reminders should be highlighted.</p><label class="settings-currency-label" for="reminder-offset">Alert at<select id="reminder-offset" class="currency-select"><option value="7">7 days</option><option value="3">3 days</option><option value="1">1 day</option></select></label></div></section>
+            <section class="panel settings-card"><div class="settings-icon icon-gold">▤</div><div><h2>Monthly budgets</h2><p>Set a spending limit for each expense category.</p><div id="budget-settings" class="budget-settings"></div></div></section>
+            <section class="panel settings-card"><div class="settings-icon icon-blue">¤</div><div><h2>Display currency</h2><p>Choose the currency used for balances and amounts throughout LifeVault.</p><label class="settings-currency-label" for="currency-select">Currency<select id="currency-select" class="currency-select" aria-label="Display currency"><option value="AED">AED د.إ</option><option value="USD">USD $</option><option value="EUR">EUR €</option><option value="GBP">GBP £</option><option value="SAR">SAR ر.س</option></select></label></div></section>
             <section class="panel settings-card"><div class="settings-icon icon-purple">◈</div><div><h2>Private by design</h2><p>Your vault and expense data live in this browser's IndexedDB. Nothing is uploaded or synced to a server. Clearing browser data or switching devices may remove your information, so keep a backup.</p><span class="status-tag"><span class="live-dot"></span> Local storage active</span></div></section>
             <section class="panel settings-card"><div class="settings-icon icon-blue">⇧</div><div><h2>Backup & restore</h2><p>Export a portable JSON backup of your records and receipt images, or restore a backup on this device.</p><div class="button-row"><button class="button button-secondary" data-action="export">↓ Export JSON backup</button><button class="button button-secondary" data-action="restore">↑ Restore backup</button><input id="restore-file" type="file" accept="application/json,.json" hidden></div></div></section>
             <section class="panel settings-card"><div class="settings-icon icon-gold">✦</div><div><h2>LifeVault Pro</h2><p id="license-status">Free plan includes 5 records on this device. Upgrade to keep as many as you need.</p><button class="button button-pro" data-action="upgrade">☆ Upgrade to Pro · $3/mo</button><button class="text-button license-link" data-action="license">Have a license key?</button></div></section>
+            <section class="panel settings-card"><div class="settings-icon icon-blue">↓</div><div><h2>Install LifeVault</h2><p>Use LifeVault like an app on this device, including offline access.</p><button class="button button-secondary" data-action="install-app" id="install-app-button">Install app</button></div></section>
             <section class="panel settings-card"><div class="settings-icon icon-red">⌫</div><div><h2>Clear sample data</h2><p>Remove only the sample items added when LifeVault was first opened. Your own records stay untouched.</p><button class="button button-secondary" data-action="clear-samples">Clear sample data</button></div></section>
             <section class="panel settings-card danger-card"><div class="settings-icon icon-red">!</div><div><h2>Clear all data</h2><p>Permanently delete vault, expense, wallet, and debt records plus receipt images from this browser. Export a backup first if you may need it.</p><button class="button button-danger" data-action="clear-all">Delete all local data</button></div></section>
           </div>
@@ -263,6 +268,7 @@
       <input type="hidden" name="id">
       <label>Item name<input name="name" required maxlength="100" placeholder="e.g. Passport renewal"></label>
       <div class="form-row"><label>Category<select name="category" required><option>IDs & travel</option><option>Insurance</option><option>Home & bills</option><option>Rewards & points</option><option>Events</option><option>Warranties</option></select></label><div class="date-time-fields"><label>Date<input type="date" name="date" required></label><label>Time (optional)<input type="time" name="time"></label></div></div>
+      <label>Repeat<select name="recurrence"><option value="none">Does not repeat</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label>
       <div class="form-row"><label>Reference (optional)<input name="reference" maxlength="80" placeholder="Policy or reference number"></label><label>Value in selected currency<input name="value" type="number" min="0" step="0.01" placeholder="0.00"></label></div>
       <label>Notes (optional)<textarea name="notes" rows="3" maxlength="500" placeholder="Anything you want to remember…"></textarea></label>
       <div class="dialog-actions"><button type="button" class="button button-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="button button-primary">Save to vault</button></div>
