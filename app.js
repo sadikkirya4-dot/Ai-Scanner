@@ -53,6 +53,7 @@
   let previewObjectUrl = null;
   let ocrBusy = false;
   let deferredPrompt = null;
+  let homeVault = [];
 
   class LocalDatabase {
     open() {
@@ -157,6 +158,78 @@
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     return Math.ceil((target.getTime() - now.getTime()) / 86400000);
+  }
+
+  function formatVaultTime(time) {
+    if (!time) return "";
+    const date = new Date(`1970-01-01T${time}`);
+    return Number.isNaN(date.getTime()) ? "" : new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit"
+    }).format(date);
+  }
+
+  function countdownLabel(date, time, done) {
+    if (done) return "Completed";
+    if (!date) return "No date";
+    if (!time) return getUrgency(date, done).text;
+    const target = new Date(`${date}T${time || "23:59"}:00`);
+    if (Number.isNaN(target.getTime())) return "Date unavailable";
+    const difference = target.getTime() - Date.now();
+    if (difference < 60000 && difference > -60000) return "Due now";
+    if (difference < 0) {
+      const duration = countdownDuration(Math.abs(difference));
+      return `Expired ${duration} ago`;
+    }
+    return `In ${countdownDuration(difference)}`;
+  }
+
+  function countdownDuration(milliseconds) {
+    let minutes = Math.max(0, Math.floor(milliseconds / 60000));
+    const days = Math.floor(minutes / 1440);
+    minutes %= 1440;
+    const hours = Math.floor(minutes / 60);
+    minutes %= 60;
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  }
+
+  function updateHomeClock(vault = []) {
+    const now = new Date();
+    const dateText = new Intl.DateTimeFormat(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric"
+    }).format(now);
+    const timeText = new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit"
+    }).format(now);
+    $("#today-label").textContent = dateText.toUpperCase();
+    $("#home-time").textContent = timeText;
+
+    const next = vault
+      .filter((item) => !item.done && item.date)
+      .map((item) => ({
+        item,
+        target: new Date(`${item.date}T${item.time || "23:59"}:00`)
+      }))
+      .filter((entry) => !Number.isNaN(entry.target.getTime()) && entry.target.getTime() >= now.getTime())
+      .sort((a, b) => a.target.getTime() - b.target.getTime())[0];
+
+    const countdownElement = $("#home-countdown");
+    countdownElement.textContent = next
+      ? `Next: ${next.item.name} · ${countdownDuration(next.target.getTime() - now.getTime())}`
+      : "No upcoming reminders";
+    countdownElement.classList.toggle("has-reminder", Boolean(next));
+  }
+
+  function vaultDateLine(item) {
+    const date = localDate(item.date);
+    const time = formatVaultTime(item.time);
+    return [date, time, countdownLabel(item.date, item.time, item.done)].filter(Boolean).join(" · ");
   }
 
   function getUrgency(date, done) {
@@ -357,10 +430,8 @@
       upcomingList.innerHTML = '<div class="empty-inline"><p>No upcoming reminders. Add an item to keep an eye on it.</p></div>';
     } else {
       upcomingList.innerHTML = upcoming.map((item) => {
-        const days = dayDifference(item.date);
         const icon = CATEGORIES.vault[item.category] || "◷";
-        const timing = days < 0 ? `Overdue by ${Math.abs(days)} days` : days === 0 ? "Due today" : `In ${days} day${days === 1 ? "" : "s"}`;
-        return `<div class="compact-item"><span class="compact-icon">${icon}</span><span class="compact-copy"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)} · ${localDate(item.date)}</small></span><span class="compact-days${days <= 7 ? " urgent" : ""}">${timing}</span></div>`;
+        return `<div class="compact-item"><span class="compact-icon">${icon}</span><span class="compact-copy"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)} · ${escapeHtml(vaultDateLine(item))}</small></span></div>`;
       }).join("");
     }
     renderCategoryPie($("#dashboard-breakdown"), overviewExpenses, Object.keys(CATEGORIES.expense), presentation.caption);
@@ -497,7 +568,7 @@
       $(".category-icon", card).textContent = CATEGORIES.vault[item.category] || "◷";
       $(".vault-category", card).textContent = item.category;
       $(".vault-name", card).textContent = item.name;
-      $(".vault-date", card).textContent = `${item.done ? "Completed" : "Date"} · ${localDate(item.date)}`;
+      $(".vault-date", card).textContent = vaultDateLine(item);
       const urgency = getUrgency(item.date, item.done);
       const badge = $(".urgency-badge", card);
       badge.className = `urgency-badge ${urgency.className}`;
@@ -705,6 +776,8 @@
 
   async function refresh() {
     const data = await loadAll();
+    homeVault = data.vault;
+    updateHomeClock(data.vault);
     renderDashboard(data);
     renderVault(data.vault);
     renderExpenses(data.expenses);
@@ -749,6 +822,7 @@
     form.elements.name.value = item?.name || "";
     form.elements.category.value = item?.category || "IDs & travel";
     form.elements.date.value = item?.date || todayISO();
+    form.elements.time.value = item?.time || "";
     form.elements.reference.value = item?.reference || "";
     form.elements.value.value = item?.value || "";
     form.elements.notes.value = item?.notes || "";
@@ -879,6 +953,7 @@
       name: form.elements.name.value.trim(),
       category: form.elements.category.value,
       date: form.elements.date.value,
+      time: form.elements.time.value,
       reference: form.elements.reference.value.trim(),
       value: Number(form.elements.value.value) || 0,
       notes: form.elements.notes.value.trim(),
@@ -998,10 +1073,13 @@
   function addToCalendar(item) {
     const date = item.date.replaceAll("-", "");
     const dateTime = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    const start = item.time
+      ? `DTSTART:${date}T${item.time.replace(":", "")}00`
+      : `DTSTART;VALUE=DATE:${date}`;
     const ics = [
       "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//LifeVault//Life Admin//EN",
       "CALSCALE:GREGORIAN", "BEGIN:VEVENT", `UID:${item.id}@lifevault.local`,
-      `DTSTAMP:${dateTime}`, `DTSTART;VALUE=DATE:${date}`,
+      `DTSTAMP:${dateTime}`, start,
       `SUMMARY:${calendarEscape(item.name)}`,
       `DESCRIPTION:${calendarEscape(`${item.category}${item.reference ? ` · Ref: ${item.reference}` : ""}${item.notes ? ` · ${item.notes}` : ""}`)}`,
       "BEGIN:VALARM", "TRIGGER:-P7D", "ACTION:DISPLAY",
@@ -1013,7 +1091,9 @@
   }
 
   function openWhatsApp(item) {
-    const message = `LifeVault reminder: ${item.name} is due on ${localDate(item.date)}.`;
+    const time = formatVaultTime(item.time);
+    const when = time ? `${localDate(item.date)} at ${time}` : localDate(item.date);
+    const message = `LifeVault reminder: ${item.name} is due on ${when}.`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
@@ -1575,7 +1655,6 @@
       if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
       previewObjectUrl = null;
     });
-    $("#today-label").textContent = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" }).format(new Date()).toUpperCase();
     window.addEventListener("beforeinstallprompt", (event) => {
       event.preventDefault();
       deferredPrompt = event;
@@ -1601,6 +1680,10 @@
       await seedSamplesIfEmpty();
       bindEvents();
       await refresh();
+      window.setInterval(() => updateHomeClock(homeVault), 1000);
+      window.setInterval(() => {
+        refresh().catch((error) => reportError(error, "Could not refresh countdown"));
+      }, 60000);
       if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
         navigator.serviceWorker.register("./sw.js").catch((error) => {
           showToast(`Offline app setup failed: ${error.message || "service worker unavailable"}`, "error");
