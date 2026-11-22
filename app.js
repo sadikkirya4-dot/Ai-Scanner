@@ -318,6 +318,19 @@
         }
         await database.put("meta", { key: "rich-debt-samples-v1", value: true });
       }
+      const owedToMeSeed = await database.get("meta", "owed-to-me-samples-v2");
+      if (!owedToMeSeed?.value) {
+        const debts = await database.all("debts");
+        await Promise.all([
+          debts.some((debt) => debt.id === "sample-debt-3")
+            ? Promise.resolve()
+            : database.put("debts", { id: "sample-debt-3", person: "Ahmed", direction: "owed-to-me", amount: 900, remaining: 900, date: todayISO(), dueDate: dateOffset(15), note: "Shared hotel and trip expenses", settledRemaining: 900, sample: true, createdAt: Date.now() - 1000 }),
+          debts.some((debt) => debt.id === "sample-debt-4")
+            ? Promise.resolve()
+            : database.put("debts", { id: "sample-debt-4", person: "Layla", direction: "owed-to-me", amount: 350, remaining: 180, date: dateOffset(-5), dueDate: dateOffset(20), note: "Shopping reimbursement", settledRemaining: 180, sample: true, createdAt: Date.now() - 900 })
+        ]);
+        await database.put("meta", { key: "owed-to-me-samples-v2", value: true });
+      }
       const richCategorySeed = await database.get("meta", "rich-category-samples-v1");
       if (!richCategorySeed?.value) {
         const expenses = await database.all("expenses");
@@ -407,7 +420,9 @@
     ];
     const debtSamples = [
       { id: "sample-debt-1", person: "Sarah", direction: "owed-to-me", amount: 600, remaining: 250, date: dateOffset(-20), dueDate: dateOffset(10), note: "Shared dinner and taxi", settledRemaining: 250, sample: true, createdAt: now - 1200 },
-      { id: "sample-debt-2", person: "Omar", direction: "i-owe", amount: 400, remaining: 400, date: dateOffset(-9), dueDate: dateOffset(5), note: "Weekend fuel advance", settledRemaining: 400, sample: true, createdAt: now - 1100 }
+      { id: "sample-debt-2", person: "Omar", direction: "i-owe", amount: 400, remaining: 400, date: dateOffset(-9), dueDate: dateOffset(5), note: "Weekend fuel advance", settledRemaining: 400, sample: true, createdAt: now - 1100 },
+      { id: "sample-debt-3", person: "Ahmed", direction: "owed-to-me", amount: 900, remaining: 900, date: todayISO(), dueDate: dateOffset(15), note: "Shared hotel and trip expenses", settledRemaining: 900, sample: true, createdAt: now - 1000 },
+      { id: "sample-debt-4", person: "Layla", direction: "owed-to-me", amount: 350, remaining: 180, date: dateOffset(-5), dueDate: dateOffset(20), note: "Shopping reimbursement", settledRemaining: 180, sample: true, createdAt: now - 900 }
     ];
     const taskSamples = [
       { id: "sample-task-1", title: "Find car keys", location: "Bottom drawer · bedroom", date: todayISO(), priority: "high", done: false, sample: true, createdAt: now - 1000 },
@@ -473,14 +488,21 @@
     const today = todayISO();
     if (overviewPeriod === "all") return null;
     if (overviewPeriod === "today") return { start: today, end: today };
-    if (overviewPeriod === "last-month") {
+    if (overviewPeriod === "week") {
+      const day = now.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      const start = new Date(now);
+      start.setDate(now.getDate() + mondayOffset);
       return {
-        start: dateInputValue(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
-        end: dateInputValue(new Date(now.getFullYear(), now.getMonth(), 0))
+        start: dateInputValue(start),
+        end: today
       };
     }
-    if (overviewPeriod === "year") {
-      return { start: dateInputValue(new Date(now.getFullYear(), 0, 1)), end: today };
+    if (overviewPeriod === "month") {
+      return {
+        start: dateInputValue(new Date(now.getFullYear(), now.getMonth(), 1)),
+        end: today
+      };
     }
     return {
       start: $("#overview-start-date").value,
@@ -492,18 +514,37 @@
     return !range || ((!range.start || date >= range.start) && (!range.end || date <= range.end));
   }
 
+  function updateOverviewActiveRange(range, presentation) {
+    const label = $("#overview-active-range");
+    if (!label) return;
+    if (!range) {
+      label.textContent = "All Time";
+      return;
+    }
+    if (overviewPeriod === "today") {
+      label.textContent = `Today · ${localDate(range.start, { weekday: "short", month: "short", day: "numeric" })}`;
+      return;
+    }
+    if (overviewPeriod === "custom" && range.start && range.end) {
+      label.textContent = `${localDate(range.start, { month: "short", day: "numeric" })}–${localDate(range.end, { month: "short", day: "numeric" })}`;
+      return;
+    }
+    label.textContent = presentation.caption;
+  }
+
   function getOverviewPresentation(range) {
     const labels = {
       all: { spend: "All-time spend", savings: "Est. bulk savings", heading: "Spending · all time", caption: "ALL TIME" },
       today: { spend: "Today's spend", savings: "Est. savings · today", heading: "Spending · today", caption: "TODAY" },
-      "last-month": { spend: "Last month's spend", savings: "Est. savings · last month", heading: "Spending · last month", caption: "LAST MONTH" },
-      year: { spend: "Year-to-date spend", savings: "Est. savings · year", heading: "Spending · year to date", caption: "YEAR TO DATE" },
+      week: { spend: "This week's spend", savings: "Est. savings · week", heading: "Spending · this week", caption: "THIS WEEK" },
+      month: { spend: "This month's spend", savings: "Est. savings · month", heading: "Spending · this month", caption: "THIS MONTH" },
       custom: { spend: "Selected-period spend", savings: "Est. savings · custom", heading: "Spending · custom range", caption: "CUSTOM RANGE" }
     };
     const presentation = labels[overviewPeriod];
     if (overviewPeriod === "custom" && range?.start && range?.end) {
       presentation.caption = `${localDate(range.start, { month: "short", day: "numeric" })}–${localDate(range.end, { month: "short", day: "numeric" })}`.toUpperCase();
     }
+    updateOverviewActiveRange(range, presentation);
     return presentation;
   }
 

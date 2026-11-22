@@ -65,11 +65,12 @@
           <div class="privacy-banner offline-banner" id="offline-banner" hidden><span class="privacy-icon">⌁</span><span><strong>You are offline.</strong> LifeVault remains available and data stays on this device.</span></div>
           <div class="panel overview-filter-card">
             <span class="overview-filter-label">FILTER OVERVIEW</span>
+            <span class="overview-active-range" id="overview-active-range">Today</span>
             <div class="overview-filter-options" role="group" aria-label="Filter dashboard by date">
-              <button class="overview-filter-button" type="button" data-overview-period="all" aria-pressed="false">All</button>
+              <button class="overview-filter-button" type="button" data-overview-period="all" aria-pressed="false">All Time</button>
               <button class="overview-filter-button active" type="button" data-overview-period="today" aria-pressed="true">Today</button>
-              <button class="overview-filter-button" type="button" data-overview-period="last-month" aria-pressed="false">Last Month</button>
-              <button class="overview-filter-button" type="button" data-overview-period="year" aria-pressed="false">Year</button>
+              <button class="overview-filter-button" type="button" data-overview-period="week" aria-pressed="false">This Week</button>
+              <button class="overview-filter-button" type="button" data-overview-period="month" aria-pressed="false">This Month</button>
               <button class="overview-filter-button" type="button" data-overview-period="custom" aria-pressed="false">Custom</button>
             </div>
             <div class="overview-custom-range" id="overview-custom-range" hidden>
