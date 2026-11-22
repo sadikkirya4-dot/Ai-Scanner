@@ -820,7 +820,7 @@ body.dark .pie-legend-label small,body.dark .pie-center span,body.dark .pie-empt
 .wallet-panel { min-width: 0; }
 .wallet-header-row { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .wallet-header-row .eyebrow { flex: 0 0 auto; margin: 0; font-size: 8px; letter-spacing: .8px; white-space: nowrap; }
-.wallet-header-row > strong { min-width: 0; flex: 1 1 auto; overflow: hidden; font: 800 clamp(18px,2vw,24px) var(--font); letter-spacing: -.8px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.wallet-header-row > strong { min-width: 0; flex: 1 1 auto; overflow: hidden; font: 800 clamp(18px,2vw,24px) var(--font); letter-spacing: -.8px; font-variant-numeric: tabular-nums; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .wallet-header-actions { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; }
 .wallet-header-actions > .button { width: auto; justify-content: center; }
 .wallet-out-of { margin: 5px 0 11px; color: #9295a6; font-size: 9px; }

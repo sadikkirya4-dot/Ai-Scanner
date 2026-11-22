@@ -66,8 +66,8 @@
           <div class="panel overview-filter-card">
             <span class="overview-filter-label">FILTER OVERVIEW</span>
             <div class="overview-filter-options" role="group" aria-label="Filter dashboard by date">
-              <button class="overview-filter-button active" type="button" data-overview-period="all" aria-pressed="true">All</button>
-              <button class="overview-filter-button" type="button" data-overview-period="today" aria-pressed="false">Today</button>
+              <button class="overview-filter-button" type="button" data-overview-period="all" aria-pressed="false">All</button>
+              <button class="overview-filter-button active" type="button" data-overview-period="today" aria-pressed="true">Today</button>
               <button class="overview-filter-button" type="button" data-overview-period="last-month" aria-pressed="false">Last Month</button>
               <button class="overview-filter-button" type="button" data-overview-period="year" aria-pressed="false">Year</button>
               <button class="overview-filter-button" type="button" data-overview-period="custom" aria-pressed="false">Custom</button>
@@ -78,21 +78,11 @@
             </div>
             <p class="overview-filter-error" id="overview-filter-error" role="alert" hidden></p>
           </div>
-          <div class="section-heading"><div><p class="eyebrow">AT A GLANCE</p><h2>Your overview</h2></div><span class="updated-label"><span class="live-dot"></span> Updated just now</span></div>
-          <div class="dashboard-columns">
-            <section class="panel upcoming-panel"><div class="panel-heading"><div><p class="eyebrow">STAY AHEAD</p><h2>Coming up</h2></div><button class="text-button" data-view="vault">View all <span>→</span></button></div><div id="upcoming-list" class="compact-list"></div></section>
-            <section class="panel spend-panel"><div class="panel-heading"><div><p class="eyebrow">SPENDING MIX</p><h2 id="dashboard-spend-title">Spending · all time</h2></div><button class="text-button" data-view="expenses">Details <span>→</span></button></div><div id="dashboard-breakdown" class="category-bars"></div></section>
-          </div>
-          <div class="spending-insights-grid">
-            <section class="panel savings-coach-panel"><div class="panel-heading"><div><p class="eyebrow">SMART SPENDING COACH</p><h2>Your money insights</h2></div></div><div id="spending-coach" class="spending-coach-list"></div></section>
-            <section class="panel vendor-ranking-panel"><div class="panel-heading"><div><p class="eyebrow">VENDOR TRACKER</p><h2>Most expensive vendors</h2></div></div><div id="vendor-ranking" class="vendor-ranking-list"></div></section>
-          </div>
-          <section class="panel savings-preview"><div class="panel-heading"><div><p class="eyebrow">BUY SMARTER</p><h2>Small habits, smarter savings</h2></div><button class="text-button" data-view="bulk">See recommendations <span>→</span></button></div><div id="dashboard-savings" class="savings-mini-grid"></div></section>
           <div class="finance-overview-grid">
             <section class="panel wallet-panel">
               <div class="wallet-header-row"><p class="eyebrow">YOUR WALLET</p><strong id="wallet-available">AED 0</strong><div class="wallet-header-actions"><button class="button button-primary button-small" data-action="add-funds">＋ Add funds</button><button class="button button-secondary button-small" data-action="add-debt">＋ Add debt</button></div></div>
               <p class="wallet-out-of" id="wallet-out-of">AED 0 currently available</p>
-              <div class="wallet-progress" id="wallet-analytics" role="img"               aria-label="Relative distribution of spending, available funds, and debts">
+              <div class="wallet-progress" id="wallet-analytics" role="img" aria-label="Relative distribution of spending, available funds, and debts">
                 <span class="wallet-segment wallet-segment-spent" data-wallet-segment="spent" aria-hidden="true"></span>
                 <span class="wallet-segment wallet-segment-added" data-wallet-segment="added" aria-hidden="true"></span>
                 <span class="wallet-segment wallet-segment-owe" data-wallet-segment="owe" aria-hidden="true"></span>
@@ -108,6 +98,16 @@
               <p class="wallet-note">Your expenses since the first top-up are deducted; sample entries and debts stay separate.</p>
             </section>
           </div>
+          <div class="section-heading"><div><p class="eyebrow">AT A GLANCE</p><h2>Your overview</h2></div><span class="updated-label"><span class="live-dot"></span> Updated just now</span></div>
+          <div class="dashboard-columns">
+            <section class="panel spend-panel"><div class="panel-heading"><div><p class="eyebrow">SPENDING MIX</p><h2 id="dashboard-spend-title">Spending · all time</h2></div><button class="text-button" data-view="expenses">Details <span>→</span></button></div><div id="dashboard-breakdown" class="category-bars"></div></section>
+            <section class="panel upcoming-panel"><div class="panel-heading"><div><p class="eyebrow">STAY AHEAD</p><h2>Coming up</h2></div><button class="text-button" data-view="tasks">View all <span>→</span></button></div><div id="upcoming-list" class="compact-list"></div></section>
+          </div>
+          <div class="spending-insights-grid">
+            <section class="panel savings-coach-panel"><div class="panel-heading"><div><p class="eyebrow">SMART SPENDING COACH</p><h2>Your money insights</h2></div></div><div id="spending-coach" class="spending-coach-list"></div></section>
+            <section class="panel vendor-ranking-panel"><div class="panel-heading"><div><p class="eyebrow">VENDOR TRACKER</p><h2>Most expensive vendors</h2></div></div><div id="vendor-ranking" class="vendor-ranking-list"></div></section>
+          </div>
+          <section class="panel savings-preview"><div class="panel-heading"><div><p class="eyebrow">BUY SMARTER</p><h2>Small habits, smarter savings</h2></div><button class="text-button" data-view="bulk">See recommendations <span>→</span></button></div><div id="dashboard-savings" class="savings-mini-grid"></div></section>
           <div class="sample-footer" id="sample-footer" hidden><span>Sample data is active</span><button class="text-button" data-action="clear-samples">Clear sample data</button></div>
         </section>
 

@@ -51,7 +51,7 @@
   let isPro = false;
   let currency = readPreference("lifevault-currency", "AED");
   let darkMode = readPreference("lifevault-theme", "light") === "dark";
-  let overviewPeriod = "all";
+  let overviewPeriod = "today";
   let currentView = "dashboard";
   let expenseReceipt = null;
   let detectedReceiptItems = [];
@@ -603,7 +603,7 @@
       ? `Available as of ${localDate(walletSummary.asOfDate)}`
       : `${money(walletSummary.available)} currently available`;
     $("#wallet-spent").textContent = money(walletSummary.spent);
-    $("#wallet-added").textContent = money(walletSummary.totalAdded);
+    $("#wallet-added").textContent = money(walletSummary.available);
     $("#dashboard-owe").textContent = money(debtSummary.owe);
     $("#dashboard-owed").textContent = money(debtSummary.owed);
     const metricParts = [
@@ -1083,7 +1083,6 @@
     updateHomeClock(data.vault);
     renderBudgetSettings(data.expenses);
     renderDashboard(data);
-    arrangeDashboardLayout();
     renderVault(data.vault);
     renderExpenses(data.expenses);
     renderBudgetProgress(data.expenses);
@@ -1099,16 +1098,6 @@
 
   function getRecordCount(data) {
     return data.vault.length + data.expenses.length + data.wallet.length + data.debts.length + (data.tasks?.length || 0) + (data.products?.length || 0);
-  }
-
-  function arrangeDashboardLayout() {
-    const dashboard = $("#view-dashboard");
-    const wallet = $(".finance-overview-grid", dashboard);
-    const insights = $(".spending-insights-grid", dashboard);
-    const sampleFooter = $("#sample-footer");
-    if (dashboard && wallet && insights && sampleFooter) {
-      dashboard.insertBefore(wallet, sampleFooter);
-    }
   }
 
   function setView(view) {
