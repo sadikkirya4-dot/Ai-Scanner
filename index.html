@@ -25,6 +25,7 @@
         <button class="nav-link" data-view="vault"><span>▤</span> Life admin <span class="nav-count" id="vault-count">0</span></button>
         <button class="nav-link" data-view="expenses"><span>↗</span> Expenses</button>
         <button class="nav-link" data-view="debts"><span>↔</span> Debts <span class="nav-count" id="debt-count">0</span></button>
+        <button class="nav-link" data-view="tasks"><span>✓</span> To-do list <span class="nav-count" id="task-count">0</span></button>
         <button class="nav-link" data-view="bulk"><span>✳</span> Smart savings</button>
         <p class="nav-label nav-label-spaced">PREFERENCES</p>
         <button class="nav-link" data-view="settings"><span>⚙</span> Data & settings</button>
@@ -57,7 +58,6 @@
         <section class="view active" id="view-dashboard" aria-labelledby="welcome-title">
           <div class="welcome-row">
             <div><p class="eyebrow dashboard-date-line"><span id="today-label">—</span><span id="home-time">—</span><span id="home-countdown">—</span></p><h1 id="welcome-title">A little more <span>peace of mind.</span></h1><p class="subtitle">Your essentials, expenses, and reminders—all in one private place.</p></div>
-            <button class="icon-button top-add" data-action="quick-add" aria-label="Add new"><span aria-hidden="true">＋</span></button>
           </div>
           <div class="home-search"><span aria-hidden="true">⌕</span><input id="home-search" type="search" placeholder="Search reminders, expenses, and debts…" aria-label="Search LifeVault"></div>
           <div class="home-search-results" id="home-search-results" hidden></div>
@@ -222,6 +222,13 @@
           <div class="empty-state" id="debt-empty" hidden><span class="empty-icon">↔</span><h3>No matching debts</h3><p>Add an amount you owe or money someone owes you.</p><button class="button button-primary" data-action="add-debt">＋ Add a debt</button></div>
         </section>
 
+        <section class="view" id="view-tasks" aria-labelledby="tasks-title">
+          <div class="view-heading"><div><p class="eyebrow">PLAN THE NEXT STEP</p><h1 id="tasks-title">Your <span>to-do list.</span></h1><p class="subtitle">Add tasks, set dates, attach photos, and keep private reminders on this device.</p></div><button class="button button-primary" data-action="add-task">＋ Add task</button></div>
+          <div class="task-toolbar"><div class="search-wrap"><span>⌕</span><input id="task-search" type="search" placeholder="Search tasks…" aria-label="Search tasks"></div><select id="task-filter" class="filter-select"><option value="open">Open</option><option value="all">All tasks</option><option value="done">Completed</option></select></div>
+          <div class="task-list panel" id="task-list"></div>
+          <div class="empty-state" id="task-empty" hidden><span class="empty-icon">✓</span><h3>No tasks here</h3><p>Add a task or change the filter.</p><button class="button button-primary" data-action="add-task">＋ Add a task</button></div>
+        </section>
+
         <section class="view" id="view-bulk" aria-labelledby="bulk-title">
           <div class="view-heading"><div><p class="eyebrow">A LITTLE PLANNING GOES A LONG WAY</p><h1 id="bulk-title">Your smart <span>stock-up list.</span></h1><p class="subtitle">Spot your repeat buys and see where a monthly bulk pack could save you more.</p></div></div>
           <div class="savings-callout"><span class="callout-icon">✳</span><div><strong>Good habits deserve a little reward.</strong><p>We group similar purchases on this device. Two or more buys earns a stock-up suggestion; estimated savings use an illustrative 18% bulk discount.</p></div></div>
@@ -243,7 +250,7 @@
             <section class="panel settings-card"><div class="settings-icon icon-gold">✦</div><div><h2>LifeVault Pro</h2><p id="license-status">Free plan includes 5 records on this device. Upgrade to keep as many as you need.</p><button class="button button-pro" data-action="upgrade">☆ Upgrade to Pro · $3/mo</button><button class="text-button license-link" data-action="license">Have a license key?</button></div></section>
             <section class="panel settings-card"><div class="settings-icon icon-blue">↓</div><div><h2>Install LifeVault</h2><p>Use LifeVault like an app on this device, including offline access.</p><button class="button button-secondary" data-action="install-app" id="install-app-button">Install app</button></div></section>
             <section class="panel settings-card"><div class="settings-icon icon-red">⌫</div><div><h2>Clear sample data</h2><p>Remove only the sample items added when LifeVault was first opened. Your own records stay untouched.</p><button class="button button-secondary" data-action="clear-samples">Clear sample data</button></div></section>
-            <section class="panel settings-card danger-card"><div class="settings-icon icon-red">!</div><div><h2>Clear all data</h2><p>Permanently delete vault, expense, wallet, and debt records plus receipt images from this browser. Export a backup first if you may need it.</p><button class="button button-danger" data-action="clear-all">Delete all local data</button></div></section>
+            <section class="panel settings-card danger-card"><div class="settings-icon icon-red">!</div><div><h2>Clear all data</h2><p>Permanently delete vault, expense, wallet, debt, and to-do records plus photos from this browser. Export a backup first if you may need it.</p><button class="button button-danger" data-action="clear-all">Delete all local data</button></div></section>
           </div>
           <p class="settings-note">OCR is processed in your browser when you choose to scan a receipt. The OCR engine and language data are downloaded from a CDN only when you start a scan; receipt images are not uploaded.</p>
         </section>
@@ -258,6 +265,7 @@
     <button class="mobile-nav-link" data-view="expenses"><span>↗</span><small>Spend</small></button>
     <button class="mobile-nav-link" data-view="debts"><span>↔</span><small>Debt</small></button>
     <button class="mobile-nav-link" data-view="bulk"><span>✳</span><small>Save</small></button>
+    <button class="mobile-nav-link" data-view="tasks"><span>✓</span><small>Tasks</small></button>
     <button class="mobile-nav-link" data-view="settings"><span>⚙</span><small>Settings</small></button>
   </nav>
 
@@ -268,6 +276,7 @@
       <input type="hidden" name="id">
       <label>Item name<input name="name" required maxlength="100" placeholder="e.g. Passport renewal"></label>
       <div class="form-row"><label>Category<select name="category" required><option>IDs & travel</option><option>Insurance</option><option>Home & bills</option><option>Rewards & points</option><option>Events</option><option>Warranties</option></select></label><div class="date-time-fields"><label>Date<input type="date" name="date" required></label><label>Time (optional)<input type="time" name="time"></label></div></div>
+      <label>Stored location (optional)<input name="location" maxlength="120" placeholder="e.g. Bottom drawer · bedroom"></label>
       <label>Repeat<select name="recurrence"><option value="none">Does not repeat</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label>
       <div class="form-row"><label>Reference (optional)<input name="reference" maxlength="80" placeholder="Policy or reference number"></label><label>Value in selected currency<input name="value" type="number" min="0" step="0.01" placeholder="0.00"></label></div>
       <label>Notes (optional)<textarea name="notes" rows="3" maxlength="500" placeholder="Anything you want to remember…"></textarea></label>
@@ -275,12 +284,27 @@
     </form>
     <form id="expense-form" class="dialog-form" hidden>
       <input type="hidden" name="id">
-      <label>Item or merchant name<input name="name" required maxlength="100" placeholder="e.g. Weekly groceries"></label>
-      <div class="form-row"><label>Category<select name="category" required><option>Groceries</option><option>Dining & Coffee</option><option>Fuel & Transport</option><option>Utilities</option><option>Shopping</option></select></label><label>Amount (<span class="form-currency">AED</span>)<input name="amount" type="number" required min="0.01" step="0.01" placeholder="0.00"></label></div>
-      <div class="form-row"><label>Quantity<input name="quantity" type="number" min="0.01" step="0.01" value="1" required></label><label>Date<input name="date" type="date" required></label></div>
+      <div class="form-row"><label>Expense category<select name="category" required><option>Groceries</option><option>Dining & Coffee</option><option>Fuel & Transport</option><option>Utilities</option><option>Shopping</option></select></label><label>Saved product<select name="product" id="expense-product"><option value="">Choose saved product</option></select></label></div>
+      <label>Item or merchant name<input name="name" required maxlength="100" placeholder="e.g. Whole milk"></label>
+      <div class="form-row"><label>Quantity<input name="quantity" type="number" min="0.01" step="0.01" value="1" required></label><label>Unit price (<span class="form-currency">AED</span>)<input name="unitPrice" type="number" min="0" step="0.01" value="0"></label></div>
+      <div class="form-row"><label>VAT / tax (%)<input name="vat" type="number" min="0" max="100" step="0.01" value="0"></label><label>Total (<span class="form-currency">AED</span>)<input name="amount" type="number" required min="0.01" step="0.01" placeholder="0.00"></label></div>
+      <label>Date<input name="date" type="date" required></label>
       <div class="receipt-upload"><div><strong>Receipt photo <span>(optional)</span></strong><small>Stored only on this device. Image files up to 8 MB.</small></div><label class="button button-secondary upload-button">＋ Choose photo<input name="receipt" type="file" accept="image/*" hidden></label><button type="button" class="button button-secondary scan-button" data-action="scan-receipt">⌕ Scan with OCR</button></div>
       <div class="receipt-preview" id="receipt-preview" hidden></div><p class="ocr-status" id="ocr-status" aria-live="polite"></p>
       <div class="dialog-actions"><button type="button" class="button button-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="button button-primary">Save expense</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="app-dialog compact-dialog" id="task-dialog" aria-labelledby="task-dialog-title">
+    <div class="dialog-header"><div><p class="eyebrow" id="task-dialog-eyebrow">QUICK REMINDER</p><h2 id="task-dialog-title">Add a task</h2></div><button class="icon-button dialog-close" data-action="close-dialog" aria-label="Close dialog">×</button></div>
+    <form id="task-form" class="dialog-form">
+      <input type="hidden" name="id">
+      <label>Task or reminder<input name="title" required maxlength="120" placeholder="e.g. Check car before trip"></label>
+      <div class="form-row"><label>Due date (optional)<input name="date" type="date"></label><label>Priority<select name="priority"><option value="normal">Normal</option><option value="high">High</option><option value="low">Low</option></select></label></div>
+      <label>Location or note (optional)<input name="location" maxlength="180" placeholder="e.g. Keys · bottom drawer"></label>
+      <div class="receipt-upload"><div><strong>Photo <span>(optional)</span></strong><small>Take or choose a picture for this reminder.</small></div><label class="button button-secondary upload-button">＋ Take photo<input name="photo" type="file" accept="image/*" capture="environment" hidden></label></div>
+      <div class="receipt-preview" id="task-photo-preview" hidden></div>
+      <div class="dialog-actions"><button type="button" class="button button-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="button button-primary">Save reminder</button></div>
     </form>
   </dialog>
 
@@ -321,7 +345,7 @@
   <template id="vault-card-template">
     <article class="vault-card panel">
       <div class="vault-card-top"><span class="category-icon"></span><span class="urgency-badge"></span></div>
-      <p class="vault-category"></p><h3 class="vault-name"></h3><p class="vault-date"></p><p class="vault-reference"></p>
+      <p class="vault-category"></p><h3 class="vault-name"></h3><p class="vault-date"></p><p class="vault-location"></p><p class="vault-reference"></p>
       <div class="vault-card-value" hidden></div><p class="vault-notes"></p>
       <div class="card-actions">
         <button class="mini-action calendar-action" data-card-action="calendar" title="Add to calendar">▦ <span>Calendar</span></button>

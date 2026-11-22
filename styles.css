@@ -278,6 +278,19 @@ body.dark .overview-filter-button.active { border-color: rgba(167,157,255,.3); c
 .budget-bar > div:first-child { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 9px; }
 .budget-bar span { color: var(--muted); }
 .budget-over { background: var(--red) !important; }
+.vault-location { margin: 6px 0 0; color: var(--green); font-size: 9px; font-weight: 650; }
+.task-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.task-toolbar .search-wrap { max-width: 420px; }
+.task-list { display: flex; flex-direction: column; padding: 8px 16px; }
+.task-row { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; min-height: 62px; border-bottom: 1px solid var(--border); }
+.task-row:last-child { border-bottom: 0; }
+.task-row.done .task-copy strong { color: var(--muted); text-decoration: line-through; }
+.task-check { width: 20px; height: 20px; accent-color: var(--purple); }
+.task-copy { min-width: 0; }
+.task-copy strong,.task-copy small { display: block; }
+.task-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.task-copy small { margin-top: 4px; color: var(--muted); font-size: 9px; }
+.task-photo-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; cursor: zoom-in; }
 .status-tag { display: inline-block; padding: 5px 9px; border-radius: 15px; color: #4b936f; background: #edf8f2; font-size: 9px; }
 .button-row { display: flex; flex-wrap: wrap; gap: 7px; }
 .license-link { margin-left: 12px; }

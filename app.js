@@ -2,7 +2,7 @@
   "use strict";
 
   const DB_NAME = "lifevault-local";
-  const DB_VERSION = 2;
+  const DB_VERSION = 4;
   const FREE_LIMIT = 5;
   const MAX_RECEIPT_BYTES = 8 * 1024 * 1024;
   const CATEGORIES = {
@@ -54,6 +54,8 @@
   let ocrBusy = false;
   let deferredPrompt = null;
   let homeVault = [];
+  let taskPhoto = null;
+  let taskPhotoObjectUrl = null;
 
   class LocalDatabase {
     open() {
@@ -66,6 +68,8 @@
           if (!database.objectStoreNames.contains("shopping")) database.createObjectStore("shopping", { keyPath: "id" });
           if (!database.objectStoreNames.contains("wallet")) database.createObjectStore("wallet", { keyPath: "id" });
           if (!database.objectStoreNames.contains("debts")) database.createObjectStore("debts", { keyPath: "id" });
+          if (!database.objectStoreNames.contains("tasks")) database.createObjectStore("tasks", { keyPath: "id" });
+          if (!database.objectStoreNames.contains("products")) database.createObjectStore("products", { keyPath: "id" });
           if (!database.objectStoreNames.contains("meta")) database.createObjectStore("meta", { keyPath: "key" });
         };
         request.onsuccess = () => resolve(request.result);
@@ -90,11 +94,11 @@
     delete(store, key) { return this.request(store, "readwrite", (objectStore) => objectStore.delete(key)); }
     clear(store) { return this.request(store, "readwrite", (objectStore) => objectStore.clear()); }
 
-    replaceRecords(vault, expenses, shopping, wallet, debts) {
+    replaceRecords(vault, expenses, shopping, wallet, debts, tasks = [], products = []) {
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction(["vault", "expenses", "shopping", "wallet", "debts"], "readwrite");
+        const transaction = db.transaction(["vault", "expenses", "shopping", "wallet", "debts", "tasks", "products"], "readwrite");
         for (const [store, records] of [
-          ["vault", vault], ["expenses", expenses], ["shopping", shopping], ["wallet", wallet], ["debts", debts]
+          ["vault", vault], ["expenses", expenses], ["shopping", shopping], ["wallet", wallet], ["debts", debts], ["tasks", tasks], ["products", products]
         ]) {
           const objectStore = transaction.objectStore(store);
           objectStore.clear();
@@ -236,13 +240,14 @@
     const box = $("#home-search-results");
     const normalized = query.trim().toLocaleLowerCase();
     if (!normalized) { box.hidden = true; box.replaceChildren(); return; }
-    const [vault, expenses, debts] = await Promise.all([
-      database.all("vault"), database.all("expenses"), database.all("debts")
+    const [vault, expenses, debts, tasks] = await Promise.all([
+      database.all("vault"), database.all("expenses"), database.all("debts"), database.all("tasks")
     ]);
     const matches = [
-      ...vault.map((item) => ({ text: `${item.name} ${item.category} ${item.reference || ""}`, label: "Reminder", view: "vault" })),
+      ...vault.map((item) => ({ text: `${item.name} ${item.category} ${item.location || ""} ${item.reference || ""}`, label: item.location ? `Stored at ${item.location}` : "Reminder", view: "vault" })),
       ...expenses.map((item) => ({ text: `${item.name} ${item.category}`, label: "Expense", view: "expenses" })),
-      ...debts.map((item) => ({ text: `${item.person} ${item.note || ""}`, label: "Debt", view: "debts" }))
+      ...debts.map((item) => ({ text: `${item.person} ${item.note || ""}`, label: "Debt", view: "debts" })),
+      ...tasks.map((item) => ({ text: `${item.title} ${item.location || ""}`, label: "To-do", view: "tasks" }))
     ].filter((item) => item.text.toLocaleLowerCase().includes(normalized)).slice(0, 8);
     box.hidden = false;
     box.innerHTML = matches.length
@@ -305,12 +310,12 @@
   }
 
   async function loadAll() {
-    const [vault, expenses, shopping, wallet, debts, meta] = await Promise.all([
+    const [vault, expenses, shopping, wallet, debts, tasks, products, meta] = await Promise.all([
       database.all("vault"), database.all("expenses"), database.all("shopping"),
-      database.all("wallet"), database.all("debts"), database.get("meta", "pro")
+      database.all("wallet"), database.all("debts"), database.all("tasks"), database.all("products"), database.get("meta", "pro")
     ]);
     isPro = Boolean(meta?.value);
-    return { vault, expenses, shopping, wallet, debts };
+    return { vault, expenses, shopping, wallet, debts, tasks, products };
   }
 
   function normalizeName(name) {
@@ -587,6 +592,8 @@
       $(".vault-category", card).textContent = item.category;
       $(".vault-name", card).textContent = item.name;
       $(".vault-date", card).textContent = vaultDateLine(item);
+      const location = $(".vault-location", card);
+      location.textContent = item.location ? `Stored at · ${item.location}` : "";
       const urgency = getUrgency(item.date, item.done);
       const badge = $(".urgency-badge", card);
       badge.className = `urgency-badge ${urgency.className}`;
@@ -832,6 +839,7 @@
     renderBudgetProgress(data.expenses);
     renderWalletLedger(data.wallet);
     renderDebts(data.debts);
+    renderTasks(data.tasks);
     await renderBulk(data);
     $("#license-status").textContent = isPro
       ? "LifeVault Pro is active on this device. Your local records are unlimited."
@@ -840,11 +848,11 @@
   }
 
   function getRecordCount(data) {
-    return data.vault.length + data.expenses.length + data.wallet.length + data.debts.length;
+    return data.vault.length + data.expenses.length + data.wallet.length + data.debts.length + (data.tasks?.length || 0) + (data.products?.length || 0);
   }
 
   function setView(view) {
-    const validViews = ["dashboard", "vault", "expenses", "debts", "bulk", "settings"];
+    const validViews = ["dashboard", "vault", "expenses", "debts", "tasks", "bulk", "settings"];
     if (!validViews.includes(view)) return;
     currentView = view;
     $$(".view").forEach((section) => section.classList.toggle("active", section.id === `view-${view}`));
@@ -873,6 +881,7 @@
     form.elements.date.value = item?.date || todayISO();
     form.elements.time.value = item?.time || "";
     form.elements.recurrence.value = item?.recurrence || "none";
+    form.elements.location.value = item?.location || "";
     form.elements.reference.value = item?.reference || "";
     form.elements.value.value = item?.value || "";
     form.elements.notes.value = item?.notes || "";
@@ -899,6 +908,17 @@
     preview.append(image, name, remove);
   }
 
+  function updateExpenseTotal() {
+    const form = $("#expense-form");
+    const quantity = Number(form.elements.quantity.value) || 0;
+    const unitPrice = Number(form.elements.unitPrice.value) || 0;
+    const vat = Number(form.elements.vat.value) || 0;
+    if (quantity > 0 && unitPrice >= 0) {
+      form.elements.amount.value = (quantity * unitPrice * (1 + vat / 100)).toFixed(2);
+      form.elements.amount.dataset.autoCalculated = "1";
+    }
+  }
+
   async function openExpenseForm(item) {
     const form = $("#expense-form");
     $("#dialog-title").textContent = item ? "Edit expense" : "Add an expense";
@@ -910,8 +930,17 @@
     form.elements.id.value = item?.id || "";
     form.elements.name.value = item?.name || "";
     form.elements.category.value = item?.category || "Groceries";
+    const products = await database.all("products");
+    const productSelect = form.elements.product;
+    productSelect.replaceChildren(new Option("Choose saved product", ""));
+    products.filter((product) => !item || product.category === item.category).sort((a, b) => a.name.localeCompare(b.name)).forEach((product) => {
+      productSelect.add(new Option(product.name, product.id));
+    });
+    if (item?.productId) productSelect.value = item.productId;
     form.elements.amount.value = item?.amount ?? "";
     form.elements.quantity.value = item?.quantity ?? 1;
+    form.elements.unitPrice.value = item?.unitPrice ?? (item?.amount && item?.quantity ? (Number(item.amount) / Number(item.quantity)).toFixed(2) : "");
+    form.elements.vat.value = item?.vat ?? 0;
     form.elements.date.value = item?.date || todayISO();
     $("#ocr-status").textContent = "";
     await showReceiptPreview(expenseReceipt);
@@ -923,16 +952,18 @@
     $$("dialog[open]").forEach((dialog) => dialog.close());
     if (receiptObjectUrl) URL.revokeObjectURL(receiptObjectUrl);
     receiptObjectUrl = null;
+    if (taskPhotoObjectUrl) URL.revokeObjectURL(taskPhotoObjectUrl);
+    taskPhotoObjectUrl = null;
     expenseReceipt = null;
     $("#ocr-status").textContent = "";
   }
 
   async function canAddRecord() {
     if (isPro) return true;
-    const [vault, expenses, wallet, debts] = await Promise.all([
-      database.all("vault"), database.all("expenses"), database.all("wallet"), database.all("debts")
+    const [vault, expenses, wallet, debts, tasks, products] = await Promise.all([
+      database.all("vault"), database.all("expenses"), database.all("wallet"), database.all("debts"), database.all("tasks"), database.all("products")
     ]);
-    if (getRecordCount({ vault, expenses, wallet, debts }) < FREE_LIMIT) return true;
+    if (getRecordCount({ vault, expenses, wallet, debts, tasks, products }) < FREE_LIMIT) return true;
     showDialog($("#upgrade-dialog"));
     showToast(`The free plan includes ${FREE_LIMIT} records. Upgrade to Pro to add more.`, "error");
     return false;
@@ -971,10 +1002,89 @@
     form.elements.person.focus();
   }
 
+  async function showTaskPhoto(file) {
+    if (taskPhotoObjectUrl) URL.revokeObjectURL(taskPhotoObjectUrl);
+    taskPhotoObjectUrl = file ? URL.createObjectURL(file) : null;
+    const preview = $("#task-photo-preview");
+    preview.hidden = !file;
+    preview.replaceChildren();
+    if (!file) return;
+    const image = document.createElement("img");
+    image.src = taskPhotoObjectUrl;
+    image.alt = "Task reminder photo";
+    const name = document.createElement("span");
+    name.textContent = file.name || "Captured photo";
+    preview.append(image, name);
+  }
+
+  async function openTaskForm(task) {
+    const form = $("#task-form");
+    $("#task-dialog-title").textContent = task ? "Edit reminder" : "Add a task";
+    $("#task-dialog-eyebrow").textContent = task ? "UPDATE REMINDER" : "QUICK REMINDER";
+    form.reset();
+    form.elements.id.value = task?.id || "";
+    form.elements.title.value = task?.title || "";
+    form.elements.date.value = task?.date || "";
+    form.elements.priority.value = task?.priority || "normal";
+    form.elements.location.value = task?.location || "";
+    taskPhoto = task?.photo || null;
+    await showTaskPhoto(taskPhoto);
+    showDialog($("#task-dialog"));
+    form.elements.title.focus();
+  }
+
+  async function saveTask(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const id = form.elements.id.value;
+    if (!id && !(await canAddRecord())) return;
+    const existing = id ? await database.get("tasks", id) : null;
+    const selectedPhoto = form.elements.photo.files[0];
+    const task = {
+      id: id || makeId(),
+      title: form.elements.title.value.trim(),
+      date: form.elements.date.value,
+      priority: form.elements.priority.value,
+      location: form.elements.location.value.trim(),
+      photo: selectedPhoto || taskPhoto || null,
+      done: existing?.done || false,
+      createdAt: existing?.createdAt || Date.now()
+    };
+    await database.put("tasks", task);
+    taskPhoto = null;
+    closeDialogs();
+    await refresh();
+    showToast(id ? "Reminder updated." : "Reminder added.");
+  }
+
+  function renderTasks(tasks) {
+    const query = $("#task-search").value.trim().toLocaleLowerCase();
+    const filter = $("#task-filter").value;
+    const filtered = tasks.filter((task) =>
+      (filter === "all" || (filter === "done" ? task.done : !task.done))
+      && `${task.title} ${task.location || ""}`.toLocaleLowerCase().includes(query)
+    ).sort((a, b) => Number(a.done) - Number(b.done) || a.createdAt - b.createdAt);
+    $("#task-count").textContent = String(tasks.filter((task) => !task.done).length);
+    $("#task-empty").hidden = filtered.length !== 0;
+    const list = $("#task-list");
+    list.replaceChildren();
+    filtered.forEach((task) => {
+      const row = document.createElement("div");
+      row.className = `task-row${task.done ? " done" : ""}`;
+      row.dataset.id = task.id;
+      const details = [task.location, task.date ? localDate(task.date) : "", task.priority === "high" ? "High priority" : ""].filter(Boolean).join(" · ");
+      row.innerHTML = `
+        <input class="task-check" type="checkbox" ${task.done ? "checked" : ""} aria-label="Mark ${escapeHtml(task.title)} as ${task.done ? "not done" : "done"}">
+        <span class="task-copy"><strong>${escapeHtml(task.title)}</strong><small>${escapeHtml(details || "No extra details")}</small></span>
+        <span class="task-actions">${task.photo ? '<button class="mini-action" data-task-action="photo" aria-label="View photo">▧</button>' : ""}<button class="mini-action" data-task-action="edit" aria-label="Edit task">✎</button><button class="mini-action delete-action" data-task-action="delete" aria-label="Delete task">⌫</button></span>`;
+      list.append(row);
+    });
+  }
+
   function openQuickAdd() {
     const choice = document.createElement("dialog");
     choice.className = "app-dialog compact-dialog";
-    choice.innerHTML = `<button class="icon-button dialog-close modal-x" aria-label="Close dialog">×</button><div class="upgrade-mark">＋</div><p class="eyebrow">MAKE A NOTE OF IT</p><h2>What would you like to add?</h2><p class="upgrade-copy">Choose where this belongs in your LifeVault.</p><div class="quick-choice"><button class="button button-primary" data-choice="vault">▤ &nbsp; Life admin item</button><button class="button button-secondary" data-choice="expense">↗ &nbsp; Expense</button></div>`;
+    choice.innerHTML = `<button class="icon-button dialog-close modal-x" aria-label="Close dialog">×</button><div class="upgrade-mark">＋</div><p class="eyebrow">MAKE A NOTE OF IT</p><h2>What would you like to add?</h2><p class="upgrade-copy">Choose where this belongs in your LifeVault.</p><div class="quick-choice"><button class="button button-primary" data-choice="vault">▤ &nbsp; Life admin item</button><button class="button button-secondary" data-choice="task">✓ &nbsp; Quick reminder</button><button class="button button-secondary" data-choice="expense">↗ &nbsp; Expense</button></div>`;
     document.body.append(choice);
     choice.addEventListener("click", async (event) => {
       if (event.target === choice || event.target.closest(".modal-x")) {
@@ -986,7 +1096,11 @@
       const allowed = await canAddRecord();
       choice.close();
       choice.remove();
-      if (allowed) button.dataset.choice === "vault" ? openVaultForm() : openExpenseForm();
+      if (allowed) {
+        if (button.dataset.choice === "vault") openVaultForm();
+        else if (button.dataset.choice === "task") openTaskForm();
+        else openExpenseForm();
+      }
     });
     choice.addEventListener("close", () => choice.remove(), { once: true });
     showDialog(choice);
@@ -1005,6 +1119,7 @@
       date: form.elements.date.value,
       time: form.elements.time.value,
       recurrence: form.elements.recurrence.value,
+      location: form.elements.location.value.trim(),
       reference: form.elements.reference.value.trim(),
       value: Number(form.elements.value.value) || 0,
       notes: form.elements.notes.value.trim(),
@@ -1024,6 +1139,45 @@
     const id = form.elements.id.value;
     if (!id && !(await canAddRecord())) return;
     const existing = id ? await database.get("expenses", id) : null;
+    const quantity = Number(form.elements.quantity.value) || 1;
+    const unitPrice = Number(form.elements.unitPrice.value) || 0;
+    const vat = Number(form.elements.vat.value) || 0;
+    const calculatedSubtotal = quantity * unitPrice;
+    const calculatedTotal = calculatedSubtotal * (1 + vat / 100);
+    let amount = Number(form.elements.amount.value) || 0;
+    if (unitPrice > 0 && (!amount || Number(form.elements.amount.dataset.autoCalculated) === 1)) {
+      amount = calculatedTotal;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      showToast("Enter a valid expense total.", "error");
+      return;
+    }
+    form.elements.amount.value = amount.toFixed(2);
+    const name = form.elements.name.value.trim();
+    if (!name) {
+      showToast("Choose or enter an item or merchant name.", "error");
+      return;
+    }
+    const products = await database.all("products");
+    const knownProduct = products.find((product) => product.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+    if (!id && !knownProduct && window.confirm(`"${name}" is not in the saved product list. Add it for future expenses?`)) {
+      await database.put("products", {
+        id: makeId(),
+        name,
+        category: form.elements.category.value,
+        unitPrice,
+        vat,
+        createdAt: Date.now()
+      });
+    }
+    if (knownProduct) {
+      await database.put("products", {
+        ...knownProduct,
+        category: form.elements.category.value,
+        unitPrice: unitPrice || knownProduct.unitPrice || 0,
+        vat: vat || knownProduct.vat || 0
+      });
+    }
     if (!id) {
       const duplicate = (await database.all("expenses")).find((entry) =>
         entry.name.toLocaleLowerCase() === form.elements.name.value.trim().toLocaleLowerCase()
@@ -1041,8 +1195,11 @@
       id: id || makeId(),
       name: form.elements.name.value.trim(),
       category: form.elements.category.value,
+      productId: form.elements.product.value || knownProduct?.id || "",
       amount: Number(form.elements.amount.value),
-      quantity: Number(form.elements.quantity.value),
+      quantity,
+      unitPrice,
+      vat,
       date: form.elements.date.value,
       receipt: selectedFile || expenseReceipt || null,
       sample: existing?.sample || false,
@@ -1302,9 +1459,9 @@
   }
 
   async function exportBackup() {
-    const [vault, expenses, shopping, wallet, debts] = await Promise.all([
+    const [vault, expenses, shopping, wallet, debts, tasks, products] = await Promise.all([
       database.all("vault"), database.all("expenses"), database.all("shopping"),
-      database.all("wallet"), database.all("debts")
+      database.all("wallet"), database.all("debts"), database.all("tasks"), database.all("products")
     ]);
     const serializedExpenses = await Promise.all(expenses.map(async (expense) => {
       if (!(expense.receipt instanceof Blob)) return expense;
@@ -1317,25 +1474,38 @@
         }
       };
     }));
+    const serializedTasks = await Promise.all(tasks.map(async (task) => {
+      if (!(task.photo instanceof Blob)) return task;
+      return {
+        ...task,
+        photo: {
+          data: await bytesToBase64(task.photo),
+          type: task.photo.type,
+          name: task.photo.name || ""
+        }
+      };
+    }));
     const backup = {
-      app: "LifeVault", version: 2, exportedAt: new Date().toISOString(),
-      vault, expenses: serializedExpenses, shopping, wallet, debts
+      app: "LifeVault", version: 4, exportedAt: new Date().toISOString(),
+      vault, expenses: serializedExpenses, shopping, wallet, debts, tasks: serializedTasks, products
     };
     downloadFile(`lifevault-backup-${todayISO()}.json`, JSON.stringify(backup), "application/json");
     showToast("Your local backup is ready to download.");
   }
 
   function validateBackup(input) {
-    if (!input || input.app !== "LifeVault" || ![1, 2].includes(input.version)
+    if (!input || input.app !== "LifeVault" || ![1, 2, 3, 4].includes(input.version)
       || !Array.isArray(input.vault) || !Array.isArray(input.expenses) || !Array.isArray(input.shopping)) {
       throw new Error("This file is not a supported LifeVault backup.");
     }
     if (input.wallet === undefined) input.wallet = [];
     if (input.debts === undefined) input.debts = [];
-    if (!Array.isArray(input.wallet) || !Array.isArray(input.debts)) {
-      throw new Error("The backup contains invalid wallet or debt data.");
+    if (input.tasks === undefined) input.tasks = [];
+    if (input.products === undefined) input.products = [];
+    if (!Array.isArray(input.wallet) || !Array.isArray(input.debts) || !Array.isArray(input.tasks) || !Array.isArray(input.products)) {
+      throw new Error("The backup contains invalid wallet, debt, task, or product data.");
     }
-    const allRecords = [...input.vault, ...input.expenses, ...input.shopping, ...input.wallet, ...input.debts];
+    const allRecords = [...input.vault, ...input.expenses, ...input.shopping, ...input.wallet, ...input.debts, ...input.tasks, ...input.products];
     if (allRecords.length > 10000) throw new Error("This backup contains too many records to restore.");
     const uniqueIds = new Set();
     input.vault.forEach((item) => {
@@ -1380,6 +1550,18 @@
       if (uniqueIds.has(`debt:${debt.id}`)) throw new Error("The backup contains duplicate debt IDs.");
       uniqueIds.add(`debt:${debt.id}`);
     });
+    input.tasks.forEach((task) => {
+      if (!task || typeof task.id !== "string" || !task.title) throw new Error("The backup contains an invalid task.");
+      if (uniqueIds.has(`task:${task.id}`)) throw new Error("The backup contains duplicate task IDs.");
+      uniqueIds.add(`task:${task.id}`);
+    });
+    input.products.forEach((product) => {
+      if (!product || typeof product.id !== "string" || !product.name || !CATEGORIES.expense[product.category]) {
+        throw new Error("The backup contains an invalid saved product.");
+      }
+      if (uniqueIds.has(`product:${product.id}`)) throw new Error("The backup contains duplicate product IDs.");
+      uniqueIds.add(`product:${product.id}`);
+    });
   }
 
   async function restoreBackup(file) {
@@ -1388,7 +1570,7 @@
     const raw = await file.text();
     const backup = JSON.parse(raw);
     validateBackup(backup);
-    if (!isPro && backup.vault.length + backup.expenses.length + backup.wallet.length + backup.debts.length > FREE_LIMIT) {
+    if (!isPro && backup.vault.length + backup.expenses.length + backup.wallet.length + backup.debts.length + backup.tasks.length + backup.products.length > FREE_LIMIT) {
       showDialog($("#upgrade-dialog"));
       throw new Error("This backup has more than 5 records. Activate Pro before restoring it.");
     }
@@ -1398,7 +1580,12 @@
       receipt: expense.receipt && typeof expense.receipt === "object" && typeof expense.receipt.data === "string"
         ? base64ToBlob(expense.receipt.data, expense.receipt.type) : null
     }));
-    await database.replaceRecords(backup.vault, expenses, backup.shopping, backup.wallet, backup.debts);
+    const tasks = backup.tasks.map((task) => ({
+      ...task,
+      photo: task.photo && typeof task.photo === "object" && typeof task.photo.data === "string"
+        ? base64ToBlob(task.photo.data, task.photo.type) : null
+    }));
+    await database.replaceRecords(backup.vault, expenses, backup.shopping, backup.wallet, backup.debts, tasks, backup.products);
     await refresh();
     showToast("Backup restored to this device.");
   }
@@ -1420,8 +1607,8 @@
   }
 
   async function clearAll() {
-    if (!window.confirm("Permanently delete all vault items, expenses, wallet entries, debts, receipt images, and shopping-list entries from this device? This cannot be undone.")) return;
-    await Promise.all(["vault", "expenses", "shopping", "wallet", "debts"].map((store) => database.clear(store)));
+    if (!window.confirm("Permanently delete all vault items, expenses, wallet entries, debts, tasks, photos, and shopping-list entries from this device? This cannot be undone.")) return;
+    await Promise.all(["vault", "expenses", "shopping", "wallet", "debts", "tasks", "products"].map((store) => database.clear(store)));
     await refresh();
     showToast("All local LifeVault records were deleted.");
   }
@@ -1499,6 +1686,27 @@
     const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
     const merchant = lines.find((line) => line.length > 2 && /[a-z]/i.test(line)
       && !/(receipt|tax invoice|invoice|thank you|cashier|subtotal|total|date|tel:)/i.test(line));
+    const numberPattern = /([0-9][0-9,]*(?:\.[0-9]{1,2})?)/g;
+    const vatMatch = text.match(/(?:vat|tax|gst)[^\d]*([0-9][0-9,]*(?:\.[0-9]{1,2})?)/i);
+    const vat = vatMatch ? vatMatch[1].replace(/,/g, "") : "";
+    const products = [];
+    lines.forEach((line) => {
+      if (/^(?:subtotal|total|tax|vat|gst|balance|cash|change|date|tel)/i.test(line)) return;
+      const values = [...line.matchAll(numberPattern)].map((match) => Number(match[1].replace(/,/g, ""))).filter(Number.isFinite);
+      if (values.length < 2) return;
+      const quantityMatch = line.match(/(?:^|[\s])([0-9]+(?:\.[0-9]+)?)[x×*]\s/i)
+        || line.match(/^([0-9]+(?:\.[0-9]+)?)\s+/);
+      const quantity = quantityMatch ? Number(quantityMatch[1]) : 1;
+      const unitPrice = quantityMatch ? values.find((value) => value !== quantity) || 0 : values.length > 1 ? values[values.length - 2] : values[0];
+      const lineTotal = values[values.length - 1];
+      const name = line
+        .replace(/^[0-9]+(?:\.[0-9]+)?[\s]*[x×*]?[\s]*/i, "")
+        .replace(/[0-9][0-9,]*(?:\.[0-9]{1,2})?/g, "")
+        .replace(/[\s]+/g, " ")
+        .replace(/[|:,-]+$/g, "")
+        .trim();
+      if (name.length >= 2) products.push({ name: name.slice(0, 100), quantity, unitPrice, vat: "", total: lineTotal });
+    });
     const totalPatterns = [
       /(?:grand\s+total|total\s+due|amount\s+due|net\s+total|total)\s*[:\-]?\s*(?:aed|usd|eur|gbp|sar|د\.إ|[$€£])?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
       /(?:aed|usd|eur|gbp|sar|د\.إ|[$€£])\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i
@@ -1514,7 +1722,7 @@
         }
       }
     }
-    return { merchant: merchant?.slice(0, 100) || "", amount };
+    return { merchant: merchant?.slice(0, 100) || "", amount, vat, quantity: products[0]?.quantity || 1, unitPrice: products[0]?.unitPrice || "", products };
   }
 
   async function scanReceipt() {
@@ -1539,8 +1747,16 @@
         }
       });
       const fields = extractReceiptFields(result.data.text);
-      if (fields.merchant) form.elements.name.value = fields.merchant;
-      if (fields.amount) form.elements.amount.value = fields.amount;
+      if (fields.products[0]) {
+        form.elements.name.value = fields.products[0].name;
+        form.elements.quantity.value = fields.products[0].quantity;
+        form.elements.unitPrice.value = fields.products[0].unitPrice || "";
+        form.elements.amount.value = fields.products[0].total || fields.amount;
+      } else if (fields.merchant) {
+        form.elements.name.value = fields.merchant;
+      }
+      if (fields.vat) form.elements.vat.value = fields.vat;
+      if (!fields.products[0] && fields.amount) form.elements.amount.value = fields.amount;
       status.textContent = fields.merchant || fields.amount
         ? "Review the detected values, then save. OCR can make mistakes."
         : "No clear merchant or total found. You can fill in the details manually.";
@@ -1569,6 +1785,9 @@
         break;
       case "add-debt":
         if (await canAddRecord()) openDebtForm();
+        break;
+      case "add-task":
+        if (await canAddRecord()) openTaskForm();
         break;
       case "close-dialog": closeDialogs(); break;
       case "upgrade": showDialog($("#upgrade-dialog")); break;
@@ -1631,11 +1850,73 @@
     $("#debt-list").addEventListener("click", async (event) => {
       try { await handleDebtAction(event); } catch (error) { reportError(error, "Could not update debt"); }
     });
+    $("#task-list").addEventListener("click", async (event) => {
+      const row = event.target.closest("[data-id]");
+      if (!row) return;
+      const task = await database.get("tasks", row.dataset.id);
+      if (!task) return;
+      if (event.target.matches(".task-check")) {
+        await database.put("tasks", { ...task, done: event.target.checked });
+        await refresh();
+      } else {
+        const action = event.target.closest("[data-task-action]")?.dataset.taskAction;
+        if (action === "edit") openTaskForm(task);
+        if (action === "photo" && task.photo instanceof Blob) {
+          if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+          previewObjectUrl = URL.createObjectURL(task.photo);
+          $("#receipt-viewer").innerHTML = `<img src="${previewObjectUrl}" alt="Task reminder photo">`;
+          showDialog($("#receipt-dialog"));
+        }
+        if (action === "delete" && window.confirm(`Delete "${task.title}"?`)) {
+          await database.delete("tasks", task.id);
+          await refresh();
+          showToast("Reminder deleted.");
+        }
+      }
+    });
+    $("#task-search").addEventListener("input", () => database.all("tasks").then(renderTasks).catch((error) => reportError(error, "Could not search tasks")));
+    $("#task-filter").addEventListener("change", () => database.all("tasks").then(renderTasks).catch((error) => reportError(error, "Could not filter tasks")));
+    $("#task-form").addEventListener("submit", (event) => saveTask(event).catch((error) => reportError(error, "Could not save reminder")));
+    $("#task-form").elements.photo.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file && (!file.type.startsWith("image/") || file.size > MAX_RECEIPT_BYTES)) {
+        event.target.value = "";
+        showToast("Choose an image smaller than 8 MB.", "error");
+        return;
+      }
+      taskPhoto = file || null;
+      showTaskPhoto(file).catch((error) => reportError(error, "Could not preview photo"));
+    });
     $("#vault-form").addEventListener("submit", (event) => {
       saveVault(event).catch((error) => reportError(error, "Could not save vault item"));
     });
     $("#expense-form").addEventListener("submit", (event) => {
       saveExpense(event).catch((error) => reportError(error, "Could not save expense"));
+    });
+    const expenseForm = $("#expense-form");
+    expenseForm.elements.product.addEventListener("change", async (event) => {
+      const products = await database.all("products");
+      const product = products.find((item) => item.id === event.target.value);
+      if (!product) return;
+      expenseForm.elements.name.value = product.name;
+      expenseForm.elements.category.value = product.category || expenseForm.elements.category.value;
+      expenseForm.elements.unitPrice.value = product.unitPrice || 0;
+      expenseForm.elements.vat.value = product.vat || 0;
+      updateExpenseTotal();
+    });
+    ["quantity", "unitPrice", "vat"].forEach((name) => {
+      expenseForm.elements[name].addEventListener("input", updateExpenseTotal);
+    });
+    expenseForm.elements.amount.addEventListener("input", (event) => {
+      event.target.dataset.autoCalculated = "0";
+    });
+    expenseForm.elements.category.addEventListener("change", async () => {
+      const products = await database.all("products");
+      const productSelect = expenseForm.elements.product;
+      productSelect.replaceChildren(new Option("Choose saved product", ""));
+      products.filter((product) => product.category === expenseForm.elements.category.value).sort((a, b) => a.name.localeCompare(b.name)).forEach((product) => {
+        productSelect.add(new Option(product.name, product.id));
+      });
     });
     $("#wallet-form").addEventListener("submit", (event) => {
       saveWalletEntry(event).catch((error) => reportError(error, "Could not save wallet entry"));
