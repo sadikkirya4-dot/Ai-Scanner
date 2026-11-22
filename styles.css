@@ -278,6 +278,19 @@ body.dark .overview-filter-button.active { border-color: rgba(167,157,255,.3); c
 .budget-bar > div:first-child { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 9px; }
 .budget-bar span { color: var(--muted); }
 .budget-over { background: var(--red) !important; }
+.spending-insights-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-bottom: 15px; }
+.spending-coach-list,.vendor-ranking-list { display: flex; flex-direction: column; gap: 8px; margin-top: 13px; }
+.coach-insight,.vendor-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 11px; background: #fafaff; }
+.coach-insight-icon,.vendor-rank { display: grid; place-items: center; width: 31px; height: 31px; flex: 0 0 auto; border-radius: 9px; background: var(--purple-soft); color: var(--purple); font-weight: 700; }
+.coach-insight strong,.coach-insight small,.vendor-row strong,.vendor-row small { display: block; }
+.coach-insight strong,.vendor-row strong { font-size: 10px; }
+.coach-insight small,.vendor-row small { margin-top: 3px; color: var(--muted); font-size: 9px; }
+.vendor-row > span:nth-child(2) { min-width: 0; flex: 1; }
+.vendor-amount { color: var(--ink); font-size: 10px; font-weight: 700; white-space: nowrap; }
+.detected-items { display: flex; flex-direction: column; gap: 5px; margin-top: -4px; }
+.detected-item-row { display: grid; grid-template-columns:minmax(0,1fr) 55px 70px 70px; gap: 6px; padding: 7px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 9px; }
+.detected-item-row span:nth-child(n+2) { text-align: right; }
+@media (max-width: 1180px) { .spending-insights-grid { grid-template-columns: 1fr; } }
 .vault-location { margin: 6px 0 0; color: var(--green); font-size: 9px; font-weight: 650; }
 .task-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .task-toolbar .search-wrap { max-width: 420px; }

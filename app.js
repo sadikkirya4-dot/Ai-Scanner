@@ -49,6 +49,7 @@
   let overviewPeriod = "all";
   let currentView = "dashboard";
   let expenseReceipt = null;
+  let detectedReceiptItems = [];
   let receiptObjectUrl = null;
   let previewObjectUrl = null;
   let ocrBusy = false;
@@ -77,7 +78,6 @@
         request.onblocked = () => reject(new Error("LifeVault storage is blocked by another open tab. Close other tabs and try again."));
       });
     }
-
     request(store, mode, action) {
       return new Promise((resolve, reject) => {
         const transaction = db.transaction(store, mode);
@@ -493,6 +493,116 @@
     preview.innerHTML = groups.length ? groups.map((group) =>
       `<div class="mini-savings"><span class="mini-savings-icon">✳</span><span><strong>${escapeHtml(group.name)}</strong><small>${group.purchases.length} buys · ${money(group.amount * 0.18)} possible savings</small></span></div>`
     ).join("") : '<p class="muted-small">Your repeat purchases will show up here.</p>';
+    renderSpendingInsights(expenses);
+  }
+
+  function renderSpendingInsights(expenses) {
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    const toISO = (date) => dateInputValue(date);
+
+    const currentMonth = expenses.filter((expense) => expense.date >= toISO(currentMonthStart));
+    const previousMonth = expenses.filter((expense) =>
+      expense.date >= toISO(previousMonthStart) && expense.date <= toISO(previousMonthEnd)
+    );
+    const currentTotal = currentMonth.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+    const previousTotal = previousMonth.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+    const monthDifference = previousTotal ? (currentTotal - previousTotal) / previousTotal * 100 : 0;
+    const weeklyTotals = [];
+    for (let offset = 21; offset >= 0; offset -= 7) {
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - offset);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weeklyTotals.push(expenses
+        .filter((expense) => expense.date >= dateInputValue(weekStart) && expense.date <= dateInputValue(weekEnd))
+        .reduce((sum, expense) => sum + Number(expense.amount || 0), 0));
+    }
+    let savingsStreak = 0;
+    for (let index = weeklyTotals.length - 1; index > 0; index -= 1) {
+      if (weeklyTotals[index] <= weeklyTotals[index - 1]) savingsStreak += 1;
+      else break;
+    }
+
+    const categoryTotals = new Map();
+    currentMonth.forEach((expense) => {
+      categoryTotals.set(expense.category, (categoryTotals.get(expense.category) || 0) + Number(expense.amount || 0));
+    });
+    const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0];
+
+    const budgets = getBudgetPreferences();
+    const overspent = Object.entries(budgets).filter(([category, limit]) =>
+      Number(limit) > 0
+      && (categoryTotals.get(category) || 0) > Number(limit)
+    );
+
+    const coach = [];
+    if (previousTotal > 0) {
+      coach.push({
+        icon: monthDifference <= 0 ? "↘" : "↗",
+        title: monthDifference <= 0
+          ? `Spending is ${Math.abs(Math.round(monthDifference))}% lower than last month`
+          : `Spending is ${Math.round(monthDifference)}% higher than last month`,
+        detail: monthDifference <= 0
+          ? `${money(previousTotal - currentTotal)} kept from spending`
+          : `Review recent purchases to get back on track`
+      });
+    }
+    if (savingsStreak > 0) {
+      coach.unshift({
+        icon: "★",
+        title: `${savingsStreak}-week spending streak`,
+        detail: "You spent less than the previous week. Keep the habit going."
+      });
+    }
+    if (topCategory) {
+      const share = currentTotal ? Math.round(topCategory[1] / currentTotal * 100) : 0;
+      coach.push({
+        icon: "◫",
+        title: `${topCategory[0]} is your largest spending category`,
+        detail: `${money(topCategory[1])} · ${share}% of this month`
+      });
+    }
+    if (overspent.length) {
+      overspent.slice(0, 2).forEach(([category, limit]) => {
+        coach.push({
+          icon: "!",
+          title: `${category} budget exceeded`,
+          detail: `${money((categoryTotals.get(category) || 0) - Number(limit))} over your ${money(limit)} limit`
+        });
+      });
+    }
+    const dining = currentMonth.filter((expense) => expense.category === "Dining & Coffee");
+    if (dining.length >= 3) {
+      const diningTotal = dining.reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
+      coach.push({
+        icon: "☕",
+        title: "Small dining purchases can add up",
+        detail: `${dining.length} purchases · about ${money(diningTotal * 0.18)} could be saved`
+      });
+    }
+    if (!coach.length) {
+      coach.push({ icon: "✓", title: "Your spending coach is ready", detail: "Add expenses to start seeing personalized insights" });
+    }
+
+    $("#spending-coach").innerHTML = coach.slice(0, 4).map((insight) =>
+      `<div class="coach-insight"><span class="coach-insight-icon">${insight.icon}</span><span><strong>${escapeHtml(insight.title)}</strong><small>${escapeHtml(insight.detail)}</small></span></div>`
+    ).join("");
+
+    const vendorTotals = new Map();
+    expenses.forEach((expense) => {
+      if (!expense.vendor) return;
+      const vendor = expense.vendor.trim();
+      vendorTotals.set(vendor, (vendorTotals.get(vendor) || 0) + Number(expense.amount || 0));
+    });
+    const vendors = [...vendorTotals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    $("#vendor-ranking").innerHTML = vendors.length
+      ? vendors.map(([vendor, amount], index) =>
+        `<div class="vendor-row"><span class="vendor-rank">${index + 1}</span><span><strong>${escapeHtml(vendor)}</strong><small>Tracked spending</small></span><strong class="vendor-amount">${money(amount)}</strong></div>`
+      ).join("")
+      : '<p class="muted-small">Add a vendor or shop to each expense to see rankings.</p>';
   }
 
   function renderCategoryPie(container, expenses, categories, caption) {
@@ -930,6 +1040,7 @@
     form.elements.id.value = item?.id || "";
     form.elements.name.value = item?.name || "";
     form.elements.category.value = item?.category || "Groceries";
+    form.elements.vendor.value = item?.vendor || "";
     const products = await database.all("products");
     const productSelect = form.elements.product;
     productSelect.replaceChildren(new Option("Choose saved product", ""));
@@ -943,6 +1054,9 @@
     form.elements.vat.value = item?.vat ?? 0;
     form.elements.date.value = item?.date || todayISO();
     $("#ocr-status").textContent = "";
+    detectedReceiptItems = [];
+    $("#detected-items").hidden = true;
+    $("#detected-items").replaceChildren();
     await showReceiptPreview(expenseReceipt);
     showDialog($("#item-dialog"));
     form.elements.name.focus();
@@ -955,6 +1069,7 @@
     if (taskPhotoObjectUrl) URL.revokeObjectURL(taskPhotoObjectUrl);
     taskPhotoObjectUrl = null;
     expenseReceipt = null;
+    detectedReceiptItems = [];
     $("#ocr-status").textContent = "";
   }
 
@@ -1116,6 +1231,7 @@
       id: id || makeId(),
       name: form.elements.name.value.trim(),
       category: form.elements.category.value,
+      vendor: form.elements.vendor.value.trim(),
       date: form.elements.date.value,
       time: form.elements.time.value,
       recurrence: form.elements.recurrence.value,
@@ -1202,6 +1318,7 @@
       vat,
       date: form.elements.date.value,
       receipt: selectedFile || expenseReceipt || null,
+      receiptItems: detectedReceiptItems,
       sample: existing?.sample || false,
       createdAt: existing?.createdAt || Date.now()
     };
@@ -1747,6 +1864,7 @@
         }
       });
       const fields = extractReceiptFields(result.data.text);
+      detectedReceiptItems = fields.products;
       if (fields.products[0]) {
         form.elements.name.value = fields.products[0].name;
         form.elements.quantity.value = fields.products[0].quantity;
@@ -1757,6 +1875,14 @@
       }
       if (fields.vat) form.elements.vat.value = fields.vat;
       if (!fields.products[0] && fields.amount) form.elements.amount.value = fields.amount;
+      if (fields.merchant) form.elements.vendor.value = fields.merchant;
+      const detected = $("#detected-items");
+      detected.hidden = fields.products.length === 0;
+      detected.innerHTML = fields.products.length
+        ? `<div class="detected-item-row"><strong>Detected item</strong><strong>Qty</strong><strong>Price</strong><strong>Total</strong></div>${fields.products.map((line) =>
+          `<div class="detected-item-row"><span>${escapeHtml(line.name)}</span><span>${line.quantity}</span><span>${money(line.unitPrice)}</span><span>${money(line.total)}</span></div>`
+        ).join("")}`
+        : "";
       status.textContent = fields.merchant || fields.amount
         ? "Review the detected values, then save. OCR can make mistakes."
         : "No clear merchant or total found. You can fill in the details manually.";

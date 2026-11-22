@@ -172,6 +172,10 @@
             <section class="panel spend-panel"><div class="panel-heading"><div><p class="eyebrow">MONEY MOMENT</p><h2 id="dashboard-spend-title">Spending · all time</h2></div><button class="text-button" data-view="expenses">Details <span>→</span></button></div><div id="dashboard-breakdown" class="category-bars"></div><div class="privacy-footnote"><span>◈</span> Only you can see your spending</div></section>
           </div>
           <section class="panel savings-preview"><div class="panel-heading"><div><p class="eyebrow">BUY SMARTER</p><h2>Small habits, smarter savings</h2></div><button class="text-button" data-view="bulk">See recommendations <span>→</span></button></div><div id="dashboard-savings" class="savings-mini-grid"></div></section>
+          <div class="spending-insights-grid">
+            <section class="panel savings-coach-panel"><div class="panel-heading"><div><p class="eyebrow">SMART SPENDING COACH</p><h2>Your money insights</h2></div></div><div id="spending-coach" class="spending-coach-list"></div></section>
+            <section class="panel vendor-ranking-panel"><div class="panel-heading"><div><p class="eyebrow">VENDOR TRACKER</p><h2>Most expensive vendors</h2></div></div><div id="vendor-ranking" class="vendor-ranking-list"></div></section>
+          </div>
           <div class="sample-footer" id="sample-footer" hidden><span>Sample data is active</span><button class="text-button" data-action="clear-samples">Clear sample data</button></div>
         </section>
 
@@ -286,11 +290,13 @@
       <input type="hidden" name="id">
       <div class="form-row"><label>Expense category<select name="category" required><option>Groceries</option><option>Dining & Coffee</option><option>Fuel & Transport</option><option>Utilities</option><option>Shopping</option></select></label><label>Saved product<select name="product" id="expense-product"><option value="">Choose saved product</option></select></label></div>
       <label>Item or merchant name<input name="name" required maxlength="100" placeholder="e.g. Whole milk"></label>
+      <label>Vendor / shop (optional)<input name="vendor" maxlength="100" placeholder="e.g. Carrefour or Starbucks"></label>
       <div class="form-row"><label>Quantity<input name="quantity" type="number" min="0.01" step="0.01" value="1" required></label><label>Unit price (<span class="form-currency">AED</span>)<input name="unitPrice" type="number" min="0" step="0.01" value="0"></label></div>
       <div class="form-row"><label>VAT / tax (%)<input name="vat" type="number" min="0" max="100" step="0.01" value="0"></label><label>Total (<span class="form-currency">AED</span>)<input name="amount" type="number" required min="0.01" step="0.01" placeholder="0.00"></label></div>
       <label>Date<input name="date" type="date" required></label>
       <div class="receipt-upload"><div><strong>Receipt photo <span>(optional)</span></strong><small>Stored only on this device. Image files up to 8 MB.</small></div><label class="button button-secondary upload-button">＋ Choose photo<input name="receipt" type="file" accept="image/*" hidden></label><button type="button" class="button button-secondary scan-button" data-action="scan-receipt">⌕ Scan with OCR</button></div>
       <div class="receipt-preview" id="receipt-preview" hidden></div><p class="ocr-status" id="ocr-status" aria-live="polite"></p>
+      <div class="detected-items" id="detected-items" hidden></div>
       <div class="dialog-actions"><button type="button" class="button button-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="button button-primary">Save expense</button></div>
     </form>
   </dialog>
