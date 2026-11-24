@@ -345,6 +345,18 @@
           .map((expense) => database.put("expenses", expense)));
         await database.put("meta", { key: "rich-category-samples-v1", value: true });
       }
+      const todaySpendingSeed = await database.get("meta", "today-spending-samples-v1");
+      if (!todaySpendingSeed?.value) {
+        const expenses = await database.all("expenses");
+        const todaySamples = [
+          { id: "sample-today-grocery", name: "Groceries", productId: "sample-product-milk", category: "Groceries", vendor: "Carrefour", amount: 118.75, quantity: 1, unitPrice: 118.75, vat: 5, date: todayISO(), sample: true, createdAt: Date.now() },
+          { id: "sample-today-coffee", name: "Coffee and breakfast", productId: "", category: "Dining & Coffee", vendor: "Starbucks", amount: 42.5, quantity: 2, unitPrice: 21.25, vat: 5, date: todayISO(), sample: true, createdAt: Date.now() - 100 },
+          { id: "sample-today-fuel", name: "Vehicle fuel", productId: "sample-product-fuel", category: "Fuel & Transport", vendor: "ENOC", amount: 165, quantity: 34, unitPrice: 4.85, vat: 0, date: todayISO(), sample: true, createdAt: Date.now() - 200 }
+        ];
+        await Promise.all(todaySamples.filter((sample) => !expenses.some((expense) => expense.id === sample.id))
+          .map((expense) => database.put("expenses", expense)));
+        await database.put("meta", { key: "today-spending-samples-v1", value: true });
+      }
       return;
     }
     const [vault, expenses, wallet, debts, tasks, products] = await Promise.all([
@@ -383,6 +395,9 @@
       }
     ];
     const expenseSamples = [
+      { id: "sample-today-grocery", name: "Groceries", productId: "sample-product-milk", category: "Groceries", vendor: "Carrefour", amount: 118.75, quantity: 1, unitPrice: 118.75, vat: 5, date: todayISO(), sample: true, createdAt: now },
+      { id: "sample-today-coffee", name: "Coffee and breakfast", productId: "", category: "Dining & Coffee", vendor: "Starbucks", amount: 42.5, quantity: 2, unitPrice: 21.25, vat: 5, date: todayISO(), sample: true, createdAt: now - 100 },
+      { id: "sample-today-fuel", name: "Vehicle fuel", productId: "sample-product-fuel", category: "Fuel & Transport", vendor: "ENOC", amount: 165, quantity: 34, unitPrice: 4.85, vat: 0, date: todayISO(), sample: true, createdAt: now - 200 },
       { id: "sample-grocery-1", name: "Pantry groceries", productId: "sample-product-milk", category: "Groceries", vendor: "Carrefour", amount: 84.5, quantity: 1, unitPrice: 84.5, vat: 5, date: dateInCurrentMonth(5), sample: true, createdAt: now - 3000 },
       { id: "sample-grocery-2", name: "Whole milk", productId: "sample-product-milk", category: "Groceries", vendor: "Carrefour", amount: 78, quantity: 6, unitPrice: 12.38, vat: 5, date: dateInCurrentMonth(2), sample: true, createdAt: now - 2000 },
       { id: "sample-grocery-3", name: "Fresh vegetables", productId: "sample-product-vegetables", category: "Groceries", vendor: "Fresh Market", amount: 46.75, quantity: 1, unitPrice: 46.75, vat: 5, date: dateOffset(-8), sample: true, createdAt: now - 2900 },
@@ -638,7 +653,7 @@
     renderCategoryPie($("#dashboard-breakdown"), overviewExpenses, Object.keys(CATEGORIES.expense), presentation.caption);
 
     const walletSummary = getWalletSummary(data.wallet, expenses, range);
-    const debtSummary = getDebtSummary(data.debts, range);
+    const debtSummary = getDebtSummary(data.debts);
     $("#wallet-available").textContent = money(walletSummary.available);
     $("#wallet-out-of").textContent = range
       ? `Available as of ${localDate(walletSummary.asOfDate)}`
@@ -662,7 +677,7 @@
     });
     $("#wallet-analytics").setAttribute("aria-label",
       `Relative metric comparison; segment widths represent ${metricParts.map(([, name, amount]) => `${name.toLowerCase()} ${money(amount)}`).join(", ")}. These values are not a combined wallet balance.`);
-    const allDebtSummary = getDebtSummary(data.debts, range);
+    const allDebtSummary = getDebtSummary(data.debts);
     const openDebtCount = allDebtSummary.oweCount + allDebtSummary.owedCount;
     $("#debt-count").textContent = String(openDebtCount);
 
